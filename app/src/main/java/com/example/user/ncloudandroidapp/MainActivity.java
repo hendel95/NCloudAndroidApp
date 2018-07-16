@@ -44,23 +44,12 @@ public class MainActivity extends AppCompatActivity {
     private static final String FIELDS = "files/id, files/name, files/mimeType, files/thumbnailLink";
     private static final String Q = "mimeType contains 'image' and trashed = false";
 
-   // @BindView(R.id.btnDo)
- //   private Button btnDo;
-
- //   @BindView(R.id.txvResult)
- //   private TextView txvResult;
 
   //  @BindView(R.id.image_view)
    // ImageView mImageView;
-//ButterKnife
 
     @BindView(R.id.recycler_view)
     RecyclerView mRecyclerView;
-  /*  @OnClick(R.id.btnDo)
-    private void methodButtonClick(){
-        listGDriveUserFiles();
-    }
-*/
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

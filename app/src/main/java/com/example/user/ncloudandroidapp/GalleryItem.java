@@ -18,24 +18,22 @@ public class GalleryItem implements Parcelable{
     private String id;
     @SerializedName("name")
     private String name;
-    @SerializedName("thumbnailLink")
-    private String thumbnailLink;
     @SerializedName("mimeType")
     private String mimeType;
-
+    @SerializedName("thumbnailLink")
+    private String thumbnailLink;
     public String cr = "\n";
     //다른 필드 더 추가하기 일단은 이렇게만!!
 
+    protected GalleryItem(Parcel in){
+        this.id = in.readString();
+        this.name = in.readString();
+        this.mimeType = in.readString();
+        this.thumbnailLink = in.readString();
 
-    protected GalleryItem(Parcel in) {
-        id = in.readString();
-        name = in.readString();
-        thumbnailLink = in.readString();
-        mimeType = in.readString();
-        cr = in.readString();
     }
 
-    public static final Creator<GalleryItem> CREATOR = new Creator<GalleryItem>() {
+    public static final Parcelable.Creator<GalleryItem> CREATOR = new Parcelable.Creator<GalleryItem>() {
         @Override
         public GalleryItem createFromParcel(Parcel in) {
             return new GalleryItem(in);
@@ -43,6 +41,7 @@ public class GalleryItem implements Parcelable{
 
         @Override
         public GalleryItem[] newArray(int size) {
+
             return new GalleryItem[size];
         }
     };
@@ -65,6 +64,9 @@ public class GalleryItem implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(id);
+        dest.writeString(name);
+        dest.writeString(mimeType);
         dest.writeString(thumbnailLink);
     }
 
