@@ -5,6 +5,13 @@ import android.os.Parcelable;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +19,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GalleryItem implements Parcelable{
-
 
     @SerializedName("id")
     private String id;
@@ -22,6 +28,12 @@ public class GalleryItem implements Parcelable{
     private String mimeType;
     @SerializedName("thumbnailLink")
     private String thumbnailLink;
+    @SerializedName("createdTime")
+    private String createdTime;
+
+    private  int HEADER_ITEM_TYPE = 0;
+    private int GRID_ITEM_TYPE = 1;
+
     public String cr = "\n";
     //다른 필드 더 추가하기 일단은 이렇게만!!
 
@@ -33,7 +45,7 @@ public class GalleryItem implements Parcelable{
 
     }
 
-    public static final Parcelable.Creator<GalleryItem> CREATOR = new Parcelable.Creator<GalleryItem>() {
+    public static final Creator<GalleryItem> CREATOR = new Creator<GalleryItem>() {
         @Override
         public GalleryItem createFromParcel(Parcel in) {
             return new GalleryItem(in);
@@ -52,6 +64,7 @@ public class GalleryItem implements Parcelable{
         sb.append(indent).append(indent).append(", name='").append(name).append('\'').append(cr);
         sb.append(indent).append(indent).append(", mimeType='").append(mimeType).append('\'').append(cr);
         sb.append(indent).append(indent).append(", thumbnailLink='").append(thumbnailLink).append('\'').append(cr);
+        sb.append(indent).append(indent).append(", createdTime='").append(createdTime).append('\'').append(cr);
         sb.append(indent).append(indent).append('}').append("\r\n");
         return sb.toString();
     }
@@ -68,6 +81,24 @@ public class GalleryItem implements Parcelable{
         dest.writeString(name);
         dest.writeString(mimeType);
         dest.writeString(thumbnailLink);
+    }
+
+    public Date getDate(String dateStr){
+        SimpleDateFormat s;
+
+        s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+        s.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        try {
+            return s.parse(dateStr);
+        }catch (ParseException e){
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public int getItemType() {
+        return GRID_ITEM_TYPE;
     }
 
 
