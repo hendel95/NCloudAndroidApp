@@ -18,7 +18,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class GalleryItem implements Parcelable{
+public class GalleryItem extends Item implements Parcelable {
 
     @SerializedName("id")
     private String id;
@@ -30,9 +30,6 @@ public class GalleryItem implements Parcelable{
     private String thumbnailLink;
     @SerializedName("createdTime")
     private String createdTime;
-
-    private  int HEADER_ITEM_TYPE = 0;
-    private int GRID_ITEM_TYPE = 1;
 
     public String cr = "\n";
     //다른 필드 더 추가하기 일단은 이렇게만!!
@@ -82,7 +79,7 @@ public class GalleryItem implements Parcelable{
         dest.writeString(mimeType);
         dest.writeString(thumbnailLink);
     }
-
+/*
     public Date getDate(String dateStr){
         SimpleDateFormat s;
 
@@ -96,7 +93,7 @@ public class GalleryItem implements Parcelable{
             return null;
         }
     }
-
+*/
     public int getItemType() {
         return GRID_ITEM_TYPE;
     }
