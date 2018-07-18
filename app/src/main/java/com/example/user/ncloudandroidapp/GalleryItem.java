@@ -31,6 +31,7 @@ public class GalleryItem extends Item implements Parcelable {
     @SerializedName("createdTime")
     private String createdTime;
 
+
     public String cr = "\n";
     //다른 필드 더 추가하기 일단은 이렇게만!!
 
@@ -79,24 +80,9 @@ public class GalleryItem extends Item implements Parcelable {
         dest.writeString(mimeType);
         dest.writeString(thumbnailLink);
     }
-/*
-    public Date getDate(String dateStr){
-        SimpleDateFormat s;
 
-        s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-        s.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        try {
-            return s.parse(dateStr);
-        }catch (ParseException e){
-            e.printStackTrace();
-            return null;
-        }
-    }
-*/
     public int getItemType() {
         return GRID_ITEM_TYPE;
     }
-
 
 }

@@ -34,7 +34,7 @@ public class PhotoUploadActivity extends AppCompatActivity {
         Glide.with(this)
                 .load(galleryItem.getThumbnailLink()+"0")
                 .apply(RequestOptions.fitCenterTransform().error(R.drawable.error_img)
-                        .placeholder(R.drawable.no_img))
+                        .placeholder(R.drawable.loading_img))
                 .into(detailedImage);
 
         textTitle.setText(galleryItem.getName());
