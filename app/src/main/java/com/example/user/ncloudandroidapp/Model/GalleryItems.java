@@ -1,5 +1,6 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Model;
 
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;

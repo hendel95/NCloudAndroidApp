@@ -6,10 +6,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
-import com.google.android.gms.drive.Drive;
-import com.google.android.gms.drive.DriveFile;
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;

@@ -1,18 +1,10 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
-
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -31,9 +23,8 @@ public class GalleryItem extends Item implements Parcelable {
     @SerializedName("createdTime")
     private String createdTime;
 
-
     public String cr = "\n";
-    //다른 필드 더 추가하기 일단은 이렇게만!!
+
 
     protected GalleryItem(Parcel in){
         this.id = in.readString();

@@ -1,4 +1,4 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Model;
 
 public abstract class Item {
 

@@ -23,6 +23,7 @@ public class LoginActivity extends AppCompatActivity {
 
     // you should either define client id and secret as constants or in string resources
     private final String CLIENT_ID = "610143887746-cuiinmh0rv9beoasd74gdcmuljhtcp4c.apps.googleusercontent.com";
+
     //private final String clientSecret = "your-client-secret";
     private static final String CODE = "code";
     private final String REDIRECT_URI = "com.example.user.ncloudandroidapp:/redirecturi";
