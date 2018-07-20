@@ -55,4 +55,8 @@ dependencies {
     //ButterKife
     implementation 'com.jakewharton:butterknife:8.8.1'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
+
+    //Pagination
+    implementation 'com.github.markomilos:paginate:0.5.1'
+
 }

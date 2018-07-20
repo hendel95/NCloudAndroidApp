@@ -5,9 +5,15 @@ import android.content.SharedPreferences;
 import android.util.Log;
 import com.squareup.moshi.Json;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Created by Mathias Seguy - Android2EE on 06/01/2017.
  */
+
+@Getter
+@Setter
 public class OAuthToken {
     private static final String TAG = "OAuthToken";
     /***********************************************************
@@ -52,7 +58,7 @@ public class OAuthToken {
     /***********************************************************
      * Getters and Setters
      **********************************************************/
-    public String getAccessToken() {
+  /*  public String getAccessToken() {
         return accessToken;
     }
 
@@ -82,7 +88,7 @@ public class OAuthToken {
 
     void setTokenType(String tokenType) {
         this.tokenType = tokenType;
-    }
+    }*/
 
     @Override
     public String toString() {
