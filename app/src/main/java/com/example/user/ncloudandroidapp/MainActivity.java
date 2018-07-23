@@ -1,46 +1,26 @@
 package com.example.user.ncloudandroidapp;
 
-import android.content.Context;
-import android.content.Intent;
-import android.support.design.widget.TabLayout;
-import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.Toolbar;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
+import com.example.user.ncloudandroidapp.Adapter.CustomRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-
-import static android.nfc.tech.MifareUltralight.PAGE_SIZE;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -138,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
                 PAGE_TOKEN = galleryItems.getNextPageToken();
                 List<GalleryItem> items = galleryItems.getFiles();
                 if (items != null) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
+                   // Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
 
                     if (items.size() > 0) {
                         currentDate = items.get(0).getCreatedTime();
@@ -160,6 +140,8 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
             } else if (response.code() == 404) {
                 Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
+            }else if (response.code() == 504) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_504), Toast.LENGTH_SHORT).show();
             }
         }
 
@@ -185,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
                // mProgressBar.setVisibility(View.GONE);
 
                 if (items != null) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
+                  //  Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
                     if (items.size() > 0)
                         configViews(items);
                     if (items.size() >= PAGE_SIZE) {
@@ -205,7 +187,7 @@ public class MainActivity extends AppCompatActivity {
             } else if (response.code() == 404) {
                 Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
             } else if (response.code() == 504) {
-                Toast.makeText(MainActivity.this, response.message() + "\r\n" + "Can't load data. Check your network connection !! 504", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_504), Toast.LENGTH_SHORT).show();
             }
         }
 

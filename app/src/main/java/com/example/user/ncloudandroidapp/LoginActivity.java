@@ -10,6 +10,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
+
 import okhttp3.HttpUrl;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -192,6 +194,7 @@ public class LoginActivity extends AppCompatActivity {
      * Start the next activity
      */
     private void startMainActivity(boolean newtask) {
+        //Intent i = new Intent(this, LocalGalleryActivity.class);
         Intent i = new Intent(this, MainActivity.class);
         if(newtask){
             i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);

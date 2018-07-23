@@ -1,4 +1,4 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Adapter;
 
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +17,8 @@ import com.bumptech.glide.request.RequestOptions;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
+import com.example.user.ncloudandroidapp.PhotoUploadActivity;
+import com.example.user.ncloudandroidapp.R;
 
 import java.util.ArrayList;
 import java.util.List;

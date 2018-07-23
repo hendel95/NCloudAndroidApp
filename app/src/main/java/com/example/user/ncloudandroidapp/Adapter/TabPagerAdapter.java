@@ -1,9 +1,12 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Adapter;
 
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
+
+import com.example.user.ncloudandroidapp.TabFragment1;
+import com.example.user.ncloudandroidapp.TabFragment2;
 
 public class TabPagerAdapter extends FragmentStatePagerAdapter {
 
