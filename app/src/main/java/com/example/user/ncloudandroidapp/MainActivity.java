@@ -47,14 +47,15 @@ public class MainActivity extends AppCompatActivity {
     private static final String FIELDS = "nextPageToken, files/id, files/name, files/mimeType, files/thumbnailLink, files/createdTime";
     private static final String Q = "mimeType contains 'image' and trashed = false";
     private static final String ORDER = "createdTime desc";
-    private static final Integer PAGE_SIZE = 10;
+    private static final Integer PAGE_SIZE = 100;
     private String PAGE_TOKEN = null;
 
     private static final int DEFAULT_SPAN_COUNT = 3;
-    private List<Item> mItemList;
     private CustomRecyclerViewAdapter mAdapter;
     private CustomDateFormat mCustomDateFormat = new CustomDateFormat();
     private GridLayoutManager gridLayoutManager;
+
+    private String currentDate;
 
     private boolean isLastPage = false;
     private boolean isLoading = false;
@@ -62,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.recycler_view)
     RecyclerView mRecyclerView;
 
-   // @BindView(R.id.progressBar)
+    //@BindView(R.id.progressBar)
     //ProgressBar mProgressBar;
 
     //  @BindView(R.id.tabLayout)
@@ -109,202 +110,133 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-*/ ////
+*/
         gridLayoutManager = new GridLayoutManager(getApplicationContext(), DEFAULT_SPAN_COUNT);
 
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
-        mRecyclerView.addOnScrollListener(new PaginationScrollListener(gridLayoutManager) {
-            @Override
-            protected void loadMoreItems() {
-                isLoading = true;
-                OAuthServerIntf server = RetrofitBuilder.getOAuthClient(MainActivity.this);
-                Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER, PAGE_SIZE, PAGE_TOKEN);
-                galleryItemCall.enqueue(findNextImagesCallback);
-            }
+        mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
 
-            @Override
-            public int getTotalPageCount() {
-                return 0;
-            }
+        mAdapter = new CustomRecyclerViewAdapter(getApplicationContext(), gridLayoutManager, DEFAULT_SPAN_COUNT);
+        mRecyclerView.setAdapter(mAdapter);
 
-            @Override
-            public boolean isLastPage() {
-                return false;
-            }
-
-            @Override
-            public boolean isLoading() {
-                return false;
-            }
-        });
-
-      // listGDriveUserFiles();
         OAuthServerIntf server = RetrofitBuilder.getOAuthClient(this);
         Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER, PAGE_SIZE, PAGE_TOKEN);
         galleryItemCall.enqueue(findFirstImagesCallback);
 
     }
 
-    private Callback<GalleryItems> findFirstImagesCallback = new Callback<GalleryItems>(){
+    private Callback<GalleryItems> findFirstImagesCallback = new Callback<GalleryItems>() {
 
-            @Override
-            public void onResponse(Call<GalleryItems> call, Response<GalleryItems> response) {
-                GalleryItems galleryItems = response.body();
-                isLoading = false;
-                if (response.code() == 200 && galleryItems != null) {
-                    PAGE_TOKEN = galleryItems.getNextPageToken();
-                    List<GalleryItem> items = galleryItems.getFiles();
-                    if (items != null) {
-                        Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
-                        if(items.size() > 0)
-                            configViews(items);
+        @Override
+        public void onResponse(Call<GalleryItems> call, Response<GalleryItems> response) {
+            GalleryItems galleryItems = response.body();
+            isLoading = false;
 
-                        if (items.size() >= PAGE_SIZE) {
-                            //add footer
-                        } else {
-                            isLastPage = true;
-                        }
+            if (response.code() == 200 && galleryItems != null) {
+                PAGE_TOKEN = galleryItems.getNextPageToken();
+                List<GalleryItem> items = galleryItems.getFiles();
+                if (items != null) {
+                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
+
+                    if (items.size() > 0) {
+                        currentDate = items.get(0).getCreatedTime();
+                        mAdapter.add(new HeaderItem(mCustomDateFormat.dateFormatting(currentDate, Item.HEADER_ITEM_TYPE)));
+                        configViews(items);
                     }
-
-                } else if (response.code() == 400) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 401) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 403) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 404) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
+                    if (items.size() >= PAGE_SIZE) {
+                        mAdapter.addFooter();
+                    } else {
+                        isLastPage = true;
+                    }
                 }
-            }
 
-            @Override
-            public void onFailure(Call<GalleryItems> call, Throwable t) {
-                Log.e(TAG, "The call listFilesCall failed", t);
+            } else if (response.code() == 400) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 401) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 403) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 404) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
             }
+        }
+
+        @Override
+        public void onFailure(Call<GalleryItems> call, Throwable t) {
+            Log.e(TAG, "The call listFilesCall failed", t);
+        }
 
 
     };
 
     private Callback<GalleryItems> findNextImagesCallback = new Callback<GalleryItems>() {
 
-            @Override
-            public void onResponse(Call<GalleryItems> call, Response<GalleryItems> response) {
-                GalleryItems galleryItems = response.body();
-                isLoading = false;
+        @Override
+        public void onResponse(Call<GalleryItems> call, Response<GalleryItems> response) {
+            GalleryItems galleryItems = response.body();
+            mAdapter.removeFooter();
+            isLoading = false;
 
-                if (response.code() == 200 && galleryItems != null) {
-                    PAGE_TOKEN = galleryItems.getNextPageToken();
-                    List<GalleryItem> items = galleryItems.getFiles();
-                    if (items != null) {
-                        Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
-                        if(items.size() > 0)
-                            configViews(items);
+            if (response.code() == 200 && galleryItems != null) {
+                PAGE_TOKEN = galleryItems.getNextPageToken();
+                List<GalleryItem> items = galleryItems.getFiles();
+               // mProgressBar.setVisibility(View.GONE);
 
-                        if (items.size() >= PAGE_SIZE) {
-                            //add footer
-                        } else {
-                            isLastPage = true;
-                        }
+                if (items != null) {
+                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
+                    if (items.size() > 0)
+                        configViews(items);
+                    if (items.size() >= PAGE_SIZE) {
+                        mAdapter.addFooter();
+                    } else {
+                        isLastPage = true;
                     }
-
-                } else if (response.code() == 400) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 401) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 403) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 404) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 504) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" +"Can't load data. Check your network connection !! 504", Toast.LENGTH_SHORT).show();
                 }
-            }
 
-            @Override
-            public void onFailure(Call<GalleryItems> call, Throwable t) {
-                Log.e(TAG, "The call listFilesCall failed", t);
+            } else if (response.code() == 400) {
+                isLastPage = true;
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 401) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 403) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 404) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
+            } else if (response.code() == 504) {
+                Toast.makeText(MainActivity.this, response.message() + "\r\n" + "Can't load data. Check your network connection !! 504", Toast.LENGTH_SHORT).show();
             }
+        }
+
+        @Override
+        public void onFailure(Call<GalleryItems> call, Throwable t) {
+            Log.e(TAG, "The call listFilesCall failed", t);
+        }
 
     };
 
 
-    private void listGDriveUserFiles() {
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(this);
-        Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER , PAGE_SIZE, PAGE_TOKEN);
-        galleryItemCall.enqueue(new Callback<GalleryItems>() {
-            @Override
-            public void onResponse(Call<GalleryItems> call, Response<GalleryItems> response) {
-                GalleryItems body = response.body();
-                Log.d("size of files", Integer.toString(body.getFiles().size()));
-
-                if (response.code() == 200 && response.body() != null) {
-                    List<GalleryItem> items = response.body().getFiles();
-                 //   PAGE_TOKEN = response.body().getNextPageToken();
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + Integer.toString(body.getFiles().size()), Toast.LENGTH_SHORT).show();
-                  //  Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
-                    configViews(items);
-
-                } else if (response.code() == 400) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 401) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 403) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 404) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
-                }
-            }
-
-            @Override
-            public void onFailure(Call<GalleryItems> call, Throwable t) {
-                Log.e(TAG, "The call listFilesCall failed", t);
-            }
-
-        });
-
-    }
-
     private void configViews(List<GalleryItem> items) {
 
-
-        List<GalleryItem> itemsGallery = new ArrayList<>();
-        itemsGallery.clear();
-        itemsGallery.addAll(items);
-
-        mItemList = new ArrayList<>();
+        List<Item> mItemList = new ArrayList<>();
         mItemList.clear();
 
         for (int i = 0; i < items.size(); i++) {
-            GalleryItem galleryItem = itemsGallery.get(i);
-            if (i != 0) {
-                //이전 것과 compare 했을 때, 날짜가 같지 않다면 header 생성해주기
-                if (mCustomDateFormat.compareTime(itemsGallery.get(i - 1).getCreatedTime(), itemsGallery.get(i).getCreatedTime()) != 0) {
-                    mItemList.add(new HeaderItem(mCustomDateFormat.dateFormatting(galleryItem.getCreatedTime(), Item.HEADER_ITEM_TYPE)));
-                }
-                mItemList.add(galleryItem);
-
-            } else {
+            GalleryItem galleryItem = items.get(i);
+            //이전 것과 compare 했을 때, 날짜가 같지 않다면 header 생성해주기
+            if (mCustomDateFormat.compareTime(currentDate, galleryItem.getCreatedTime()) != 0) {
+                currentDate = galleryItem.getCreatedTime();
                 mItemList.add(new HeaderItem(mCustomDateFormat.dateFormatting(galleryItem.getCreatedTime(), Item.HEADER_ITEM_TYPE)));
-                mItemList.add(galleryItem);
             }
+            mItemList.add(galleryItem);
         }
-        mAdapter = new CustomRecyclerViewAdapter(getApplicationContext(), mItemList, gridLayoutManager, DEFAULT_SPAN_COUNT);
 
-        mRecyclerView.setAdapter(mAdapter);
-
+        mAdapter.addAll(mItemList);
     }
 
-
-    public abstract class PaginationScrollListener extends RecyclerView.OnScrollListener {
-
-        GridLayoutManager layoutManager;
-
-        public PaginationScrollListener(GridLayoutManager layoutManager) {
-            this.layoutManager = layoutManager;
-        }
-
+    // region Listeners
+    private RecyclerView.OnScrollListener recyclerViewOnScrollListener = new RecyclerView.OnScrollListener() {
         @Override
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
@@ -313,26 +245,26 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
+            int visibleItemCount = gridLayoutManager.getChildCount();
+            int totalItemCount = gridLayoutManager.getItemCount();
+            int firstVisibleItemPosition = gridLayoutManager.findFirstVisibleItemPosition();
 
-            int visibleItemCount = layoutManager.getChildCount();
-            int totalItemCount = layoutManager.getItemCount();
-            int firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition();
-
-            if (!isLoading() && !isLastPage()) {
+            if (!isLoading && !isLastPage) {
                 if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount
-                        && firstVisibleItemPosition >= 0 && totalItemCount >= PAGE_SIZE) {
+                        && firstVisibleItemPosition >= 0
+                        && totalItemCount >= PAGE_SIZE) {
                     loadMoreItems();
                 }
             }
         }
+    };
 
-        protected abstract void loadMoreItems();
 
-        public abstract int getTotalPageCount();
-
-        public abstract boolean isLastPage();
-
-        public abstract boolean isLoading();
+    protected void loadMoreItems() {
+        isLoading = true;
+        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(MainActivity.this);
+        Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER, PAGE_SIZE, PAGE_TOKEN);
+        galleryItemCall.enqueue(findNextImagesCallback);
     }
 
 

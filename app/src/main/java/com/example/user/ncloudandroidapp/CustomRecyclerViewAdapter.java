@@ -23,31 +23,44 @@ import java.util.List;
 
 public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-    private static final String TAG = "CustomRecyclerViewAdaper";
+    private static final String TAG = "CustomRecyclerViewAdapter";
     private int mDefaultSpanCount;
-    private List<Item> itemObjects =  new ArrayList<>();
+    private List<Item> itemObjects;
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_ITEM = 1;
+    private static final int TYPE_FOOTER = 2;
+
+    protected boolean isFooterAdded = false;
+
 
     Context mContext;
 
-    public CustomRecyclerViewAdapter(Context context, List<Item> itemObjects, GridLayoutManager gridLayoutManager, int defaultSpanCount) {
+    public CustomRecyclerViewAdapter(Context context, GridLayoutManager gridLayoutManager, int defaultSpanCount) {
         this.mContext = context;
-        this.itemObjects = itemObjects;
         mDefaultSpanCount = defaultSpanCount;
+        itemObjects = new ArrayList<>();
         gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
-                return isHeaderType(position) == TYPE_HEADER ? mDefaultSpanCount : 1;
+                return isItemType(position) == TYPE_ITEM  ? mDefaultSpanCount : 1;
             }
         });
     }
 
-    private int isHeaderType(int position) {
-        int itemType = itemObjects.get(position).getItemType();
+    private int isItemType(int position) {
+        //int itemType = itemObjects.get(position).getItemType();
        // Log.d(TAG, "ItemType = " + Integer.toString(itemType));
-        return itemObjects.get(position).getItemType() == TYPE_HEADER ? 0 : 1;
+       /* if(isLastPosition(position) && isFooterAdded){
+            return TYPE_FOOTER;
+        }*/
+        return itemObjects.get(position).getItemType() == TYPE_ITEM ? 0 : 1;
+
+    }
+
+
+    public boolean isLastPosition(int position) {
+        return (position == itemObjects.size()-1);
     }
 
     @Override
@@ -58,6 +71,10 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         } else if (viewType == TYPE_ITEM) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
             return new ItemViewHolder(layoutView);
+        }
+        else if(viewType == TYPE_FOOTER){
+            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_item, parent, false);
+            return new LoadingViewHolder(layoutView);
         }
         throw new RuntimeException("No match for " + viewType + ".");
     }
@@ -78,6 +95,9 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
                     .load(((GalleryItem) mObject).getThumbnailLink())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
+        }
+        else if(holder instanceof LoadingViewHolder){
+          //  ((LoadingViewHolder)holder)
         }
 
 
@@ -129,6 +149,60 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
             }
         }
 
+    }
+
+    public class LoadingViewHolder extends RecyclerView.ViewHolder {
+        public LoadingViewHolder(View itemView){
+            super(itemView);
+        }
+    }
+
+    public void add(Item item) {
+        itemObjects.add(item);
+        notifyItemInserted(itemObjects.size() - 1);
+    }
+
+    public void addAll(List<Item> items) {
+        for (Item it : items) {
+            add(it);
+        }
+    }
+
+    public void addFooter(){
+        isFooterAdded = true;
+        add(new Item() {
+            @Override
+            public int getItemType() {
+                return TYPE_FOOTER;
+            }
+        });
+    }
+
+    public void clear() {
+        isFooterAdded = false;
+        while (getItemCount() > 0) {
+            remove(getItem(0));
+        }
+    }
+
+    private void remove(Item item) {
+        int position = itemObjects.indexOf(item);
+        if (position > -1) {
+            itemObjects.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
+    public void removeFooter() {
+        isFooterAdded = false;
+
+        int position = itemObjects.size() - 1;
+        Item item = getItem(position);
+
+        if (item != null) {
+            itemObjects.remove(position);
+            notifyItemRemoved(position);
+        }
     }
 
 }
