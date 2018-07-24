@@ -75,7 +75,7 @@ public class LocalGalleryFolderAdapter extends ArrayAdapter<LocalGalleryItem> {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
-        viewHolder.tv_foldern.setText(al_menu.get(position).getFolder());
+       // viewHolder.tv_foldern.setText(al_menu.get(position).getFolder());
         viewHolder.tv_foldersize.setText(al_menu.get(position).getPath().size() + "");
 
 

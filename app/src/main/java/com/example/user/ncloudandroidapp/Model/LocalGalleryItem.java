@@ -9,7 +9,7 @@ import lombok.Setter;
 @Setter
 public class LocalGalleryItem {
 
-    String folder;
+    //String folder;
     ArrayList<String> path;
 
 }

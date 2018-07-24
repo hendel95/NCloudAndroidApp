@@ -14,6 +14,8 @@ import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
@@ -23,7 +25,10 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.example.user.ncloudandroidapp.Adapter.CustomRecyclerViewAdapter;
+import com.example.user.ncloudandroidapp.Adapter.GridViewAdapter;
 import com.example.user.ncloudandroidapp.Adapter.LocalGalleryFolderAdapter;
+import com.example.user.ncloudandroidapp.Adapter.LocalRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 
 import java.io.IOException;
@@ -36,8 +41,11 @@ import butterknife.OnClick;
 
 public class LocalGalleryActivity extends AppCompatActivity {
 
-    //@BindView(R.id.open_btn)
-    //Button mButton;
+    @BindView(R.id.local_recycler_view)
+    RecyclerView mRecyclerView;
+
+    LocalRecyclerViewAdapter mLocalRecyclerViewAdapter;
+    private GridLayoutManager gridLayoutManager;
 
     private int PICK_IMAGE_REQUEST = 1;
     private String TAG = "LocalGalleryActivity";
@@ -47,6 +55,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
     boolean boolean_folder;
     LocalGalleryFolderAdapter obj_adapter;
     GridView gv_folder;
+    GridViewAdapter mGridViewAdapter;
 
     private static final int REQUEST_PERMISSIONS = 100;
 
@@ -55,18 +64,18 @@ public class LocalGalleryActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_local_gallery);
-
-        gv_folder = (GridView)findViewById(R.id.gv_folder);
+/*
+        gv_folder = (GridView) findViewById(R.id.gv_folder);
 
         gv_folder.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 Intent intent = new Intent(getApplicationContext(), PhotosActivity.class);
-                intent.putExtra("value",i);
+                intent.putExtra("value", i);
                 startActivity(intent);
             }
         });
-
+*/
 
         //갤러리 사용 권한 체크 ( 사용권한이 없을 경우 -1)
         if ((ContextCompat.checkSelfPermission(getApplicationContext(),
@@ -86,11 +95,24 @@ public class LocalGalleryActivity extends AppCompatActivity {
                         new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
                         REQUEST_PERMISSIONS);
             }
-        }else {
+        } else {
             //사용 권한이 있음을 확인하는 경우
-            Log.e("Else","Else");
+            Log.e("Else", "Else");
             fn_imagespath();
         }
+
+        gridLayoutManager = new GridLayoutManager(getApplicationContext(), 3);
+
+        mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
+        mRecyclerView.setHasFixedSize(true);
+        mRecyclerView.setLayoutManager(gridLayoutManager);
+
+        mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getApplicationContext());
+        mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
+        //mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
+
+        //mAdapter = new CustomRecyclerViewAdapter(getApplicationContext(), gridLayoutManager, DEFAULT_SPAN_COUNT);
+       // mRecyclerView.setAdapter(mAdapter);
 
        /* ButterKnife.bind(this);
         mButton.setOnClickListener(new View.OnClickListener() {
@@ -102,6 +124,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
             }
         });*/
     }
+
     public ArrayList<LocalGalleryItem> fn_imagespath() {
         sLocalGalleryItems.clear();
 
@@ -120,7 +143,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
 
         column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
         column_index_folder_name = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
-        while (cursor.moveToNext()) {
+       /* while (cursor.moveToNext()) {
             absolutePathOfImage = cursor.getString(column_index_data);
             Log.e("Column", absolutePathOfImage);
             Log.e("Folder", cursor.getString(column_index_folder_name));
@@ -157,18 +180,33 @@ public class LocalGalleryActivity extends AppCompatActivity {
 
 
         }
+*/
 
 
-        for (int i = 0; i < sLocalGalleryItems.size(); i++) {
-            Log.e("FOLDER", sLocalGalleryItems.get(i).getFolder());
-            for (int j = 0; j < sLocalGalleryItems.get(i).getPath().size(); j++) {
-                Log.e("FILE", sLocalGalleryItems.get(i).getPath().get(j));
-            }
+        while (cursor.moveToNext()) {
+            absolutePathOfImage = cursor.getString(column_index_data);
+            Log.e("Column", absolutePathOfImage);
+            Log.e("Folder", cursor.getString(column_index_folder_name));
+
+
+            ArrayList<String> al_path = new ArrayList<>();
+            al_path.add(absolutePathOfImage);
+            LocalGalleryItem obj_model = new LocalGalleryItem();
+            // obj_model.setFolder(cursor.getString(column_index_folder_name));
+            obj_model.setPath(al_path);
+
+            sLocalGalleryItems.add(obj_model);
+
+
         }
-        obj_adapter = new LocalGalleryFolderAdapter(getApplicationContext(),sLocalGalleryItems);
-        gv_folder.setAdapter(obj_adapter);
-        return sLocalGalleryItems;
-    }
+
+
+        //obj_adapter = new LocalGalleryFolderAdapter(getApplicationContext(), sLocalGalleryItems);
+        //gv_folder.setAdapter(obj_adapter);
+        //return sLocalGalleryItems;
+        //mGridViewAdapter = new GridViewAdapter(getApplicationContext(), )
+
+
 
 
 
