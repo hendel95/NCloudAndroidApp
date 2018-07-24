@@ -55,40 +55,6 @@ public class OAuthToken {
         ed.commit();
     }
 
-    /***********************************************************
-     * Getters and Setters
-     **********************************************************/
-  /*  public String getAccessToken() {
-        return accessToken;
-    }
-
-    public long getExpiresIn() {
-        return expiresIn;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public String getTokenType() {
-        return tokenType;
-    }
-
-    void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    void setExpiredAfterMilli(long expiredAfterMilli) {
-        this.expiredAfterMilli = expiredAfterMilli;
-    }
-
-    void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
-
-    void setTokenType(String tokenType) {
-        this.tokenType = tokenType;
-    }*/
 
     @Override
     public String toString() {

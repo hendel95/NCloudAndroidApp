@@ -52,6 +52,8 @@
             android:configChanges="keyboard|orientation|screenSize">
 
         </activity>
+        <activity android:name=".PhotosActivity"></activity>
+
     </application>
 
 <!--

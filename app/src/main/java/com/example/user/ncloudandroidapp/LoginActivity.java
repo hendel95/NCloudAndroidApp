@@ -194,8 +194,8 @@ public class LoginActivity extends AppCompatActivity {
      * Start the next activity
      */
     private void startMainActivity(boolean newtask) {
-        //Intent i = new Intent(this, LocalGalleryActivity.class);
-        Intent i = new Intent(this, MainActivity.class);
+        Intent i = new Intent(this, LocalGalleryActivity.class);
+        //Intent i = new Intent(this, MainActivity.class);
         if(newtask){
             i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
         }
