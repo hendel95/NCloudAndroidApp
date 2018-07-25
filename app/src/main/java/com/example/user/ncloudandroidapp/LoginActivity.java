@@ -12,6 +12,9 @@ import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 import okhttp3.HttpUrl;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -38,15 +41,41 @@ public class LoginActivity extends AppCompatActivity {
      */
     public static final String GRANT_TYPE_REFRESH_TOKEN = "refresh_token";
     private String code;
+    private boolean newtask;
     /**
      * The error returned by the server at the authorization's first step
      */
     private String error;
+    @BindView(R.id.gdrive_gallery)
+    Button gdrive_btn;
 
+    @BindView(R.id.local_gallery)
+    Button local_btn;
+
+    @OnClick(R.id.gdrive_gallery)
+    public void onStartGD(){
+        Intent i = new Intent(this, MainActivity.class);
+        if(newtask){
+            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+        startActivity(i);
+    }
+
+    @OnClick(R.id.local_gallery)
+    public void onStartLocal(){
+        Intent i = new Intent(this, LocalGalleryActivity.class);
+        if(newtask){
+            i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        }
+        startActivity(i);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+
+        ButterKnife.bind(this);
         //You can be created either because your user start your application
         //        <intent-filter>
         //            <action android:name="android.intent.action.MAIN" />
@@ -98,7 +127,8 @@ public class LoginActivity extends AppCompatActivity {
             //else just launch your MainActivity
             else {
                 Log.e(TAG, "onCreate: Token available, just launch MainActivity");
-                startMainActivity(false);
+                //startMainActivity(false);
+                newtask = false;
             }
         }
     }
@@ -144,7 +174,8 @@ public class LoginActivity extends AppCompatActivity {
                 Log.e(TAG, "The call refreshTokenFormUrl succeed with code=" + response.code() + " and has body = " + response.body());
                 //ok we have the token
                 response.body().save();
-                startMainActivity(true);
+               // startMainActivity(true);
+                newtask = true;
             }
 
             @Override
@@ -174,7 +205,8 @@ public class LoginActivity extends AppCompatActivity {
                 Log.e(TAG, "The call getRequestTokenFormCall succeed with code=" + response.code() + " and has body = " + response.body());
                 //ok we have the token
                 response.body().save();
-                startMainActivity(true);
+                //startMainActivity(true);
+                newtask = true;
             }
 
             @Override

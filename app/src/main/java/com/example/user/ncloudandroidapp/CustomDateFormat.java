@@ -53,6 +53,12 @@ public class CustomDateFormat{
         }
     }
 
+    public int compareTime(Date t1, Date t2) {
+        SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+
+        return compareTime(s.format(t1), s.format(t2));
+    }
+
 /*
     public int compareDate(String t1,String t2) {
         Date d1 = StringToDate(t1);

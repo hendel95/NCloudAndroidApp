@@ -146,7 +146,8 @@ public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
             if (position != RecyclerView.NO_POSITION) {
                 GalleryItem galleryItem = (GalleryItem) itemObjects.get(position);
                 Intent intent = new Intent(mContext, PhotoUploadActivity.class);
-                intent.putExtra(PhotoUploadActivity.EXTRA_SPACE_PHOTO, galleryItem);
+                intent.putExtra("class", TAG);
+                intent.putExtra(PhotoUploadActivity.EXTRA_GDRIVE_PHOTO, galleryItem);
                 view.getContext().startActivity(intent);
             }
         }

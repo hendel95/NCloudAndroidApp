@@ -2,14 +2,11 @@ package com.example.user.ncloudandroidapp;
 
 import android.Manifest;
 import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcel;
 import android.provider.MediaStore;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -17,27 +14,19 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.Menu;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.Button;
-import android.widget.GridView;
-import android.widget.ImageView;
 import android.widget.Toast;
 
-import com.example.user.ncloudandroidapp.Adapter.CustomRecyclerViewAdapter;
-import com.example.user.ncloudandroidapp.Adapter.GridViewAdapter;
-import com.example.user.ncloudandroidapp.Adapter.LocalGalleryFolderAdapter;
 import com.example.user.ncloudandroidapp.Adapter.LocalRecyclerViewAdapter;
+import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
+import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 
 public class LocalGalleryActivity extends AppCompatActivity {
 
@@ -49,21 +38,21 @@ public class LocalGalleryActivity extends AppCompatActivity {
 
     private int PICK_IMAGE_REQUEST = 1;
     private String TAG = "LocalGalleryActivity";
+    private static final int DEFAULT_SPAN_COUNT = 3;
 
-
-    public static ArrayList<LocalGalleryItem> sLocalGalleryItems = new ArrayList<>();
-    boolean boolean_folder;
-    LocalGalleryFolderAdapter obj_adapter;
-    GridView gv_folder;
-    GridViewAdapter mGridViewAdapter;
+    private String currentDate;
+    private Date compareDate = new Date();
+    private Date date = new Date();
+    public static List<Item> sItemList = new ArrayList<>();
 
     private static final int REQUEST_PERMISSIONS = 100;
-
+    CustomDateFormat dateFormat = new CustomDateFormat();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_local_gallery);
+        ButterKnife.bind(this);
 /*
         gv_folder = (GridView) findViewById(R.id.gv_folder);
 
@@ -76,6 +65,14 @@ public class LocalGalleryActivity extends AppCompatActivity {
             }
         });
 */
+        gridLayoutManager = new GridLayoutManager(getApplicationContext(), DEFAULT_SPAN_COUNT);
+
+        mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
+        mRecyclerView.setHasFixedSize(true);
+        mRecyclerView.setLayoutManager(gridLayoutManager);
+        mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getApplicationContext(), gridLayoutManager, DEFAULT_SPAN_COUNT);
+
+        mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
 
         //갤러리 사용 권한 체크 ( 사용권한이 없을 경우 -1)
         if ((ContextCompat.checkSelfPermission(getApplicationContext(),
@@ -98,116 +95,64 @@ public class LocalGalleryActivity extends AppCompatActivity {
         } else {
             //사용 권한이 있음을 확인하는 경우
             Log.e("Else", "Else");
-            fn_imagespath();
+            getImagePath();
         }
 
-        gridLayoutManager = new GridLayoutManager(getApplicationContext(), 3);
-
-        mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(gridLayoutManager);
-
-        mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getApplicationContext());
-        mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
-        //mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
-
-        //mAdapter = new CustomRecyclerViewAdapter(getApplicationContext(), gridLayoutManager, DEFAULT_SPAN_COUNT);
-       // mRecyclerView.setAdapter(mAdapter);
-
-       /* ButterKnife.bind(this);
-        mButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-                intent.setType("image/*");
-                startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE_REQUEST);
-            }
-        });*/
     }
 
-    public ArrayList<LocalGalleryItem> fn_imagespath() {
-        sLocalGalleryItems.clear();
-
-        int int_position = 0;
+    public List<Item> getImagePath() {
+        sItemList.clear();
+        boolean isFirstItem = true;
         Uri uri;
         Cursor cursor;
-        int column_index_data, column_index_folder_name;
+        int column_index_data, column_index_date_taken, column_index_image_id;
 
         String absolutePathOfImage = null;
+        String image_id = null;
         uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
-        String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.Media.BUCKET_DISPLAY_NAME};
+        String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.Images.Media._ID};
 
         final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
         cursor = getApplicationContext().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
 
-        column_index_data = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.DATA);
-        column_index_folder_name = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.BUCKET_DISPLAY_NAME);
-       /* while (cursor.moveToNext()) {
-            absolutePathOfImage = cursor.getString(column_index_data);
-            Log.e("Column", absolutePathOfImage);
-            Log.e("Folder", cursor.getString(column_index_folder_name));
-
-            for (int i = 0; i < sLocalGalleryItems.size(); i++) {
-                if (sLocalGalleryItems.get(i).getFolder().equals(cursor.getString(column_index_folder_name))) {
-                    boolean_folder = true;
-                    int_position = i;
-                    break;
-                } else {
-                    boolean_folder = false;
-                }
-            }
-
-
-            if (boolean_folder) {
-
-                ArrayList<String> al_path = new ArrayList<>();
-                al_path.addAll(sLocalGalleryItems.get(int_position).getPath());
-                al_path.add(absolutePathOfImage);
-                sLocalGalleryItems.get(int_position).setPath(al_path);
-
-            } else {
-                ArrayList<String> al_path = new ArrayList<>();
-                al_path.add(absolutePathOfImage);
-                LocalGalleryItem obj_model = new LocalGalleryItem();
-                obj_model.setFolder(cursor.getString(column_index_folder_name));
-                obj_model.setPath(al_path);
-
-                sLocalGalleryItems.add(obj_model);
-
-
-            }
-
-
-        }
-*/
+        column_index_data = cursor.getColumnIndex(projection[0]);
+        column_index_date_taken = cursor.getColumnIndex(projection[1]);
+        column_index_image_id = cursor.getColumnIndex(projection[2]);
 
 
         while (cursor.moveToNext()) {
             absolutePathOfImage = cursor.getString(column_index_data);
-            Log.e("Column", absolutePathOfImage);
-            Log.e("Folder", cursor.getString(column_index_folder_name));
+            image_id = cursor.getString(column_index_image_id);
 
-
-            ArrayList<String> al_path = new ArrayList<>();
-            al_path.add(absolutePathOfImage);
             LocalGalleryItem obj_model = new LocalGalleryItem();
-            // obj_model.setFolder(cursor.getString(column_index_folder_name));
-            obj_model.setPath(al_path);
+            obj_model.setPath(absolutePathOfImage);
+            obj_model.setThumbnailPath(uriToThumbnail(image_id).toString());
+            date.setTime(Long.parseLong(cursor.getString(column_index_date_taken)));
+            obj_model.setDateTakenTime(dateFormat.DateToString(date, Item.GRID_ITEM_TYPE));
 
-            sLocalGalleryItems.add(obj_model);
+            if (isFirstItem == true) {
+                compareDate.setTime(date.getTime());
+                sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));
+                isFirstItem = false;
 
+            }
+
+
+            if (dateFormat.compareTime(compareDate, date) != 0) {
+                int check = dateFormat.compareTime(compareDate, date);
+                compareDate.setTime(date.getTime());
+                sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));
+            }
+
+            sItemList.add(obj_model);
 
         }
 
+        mLocalRecyclerViewAdapter.addAll(sItemList);
 
-        //obj_adapter = new LocalGalleryFolderAdapter(getApplicationContext(), sLocalGalleryItems);
-        //gv_folder.setAdapter(obj_adapter);
-        //return sLocalGalleryItems;
-        //mGridViewAdapter = new GridViewAdapter(getApplicationContext(), )
-
-
-
+        return sItemList;
+    }
 
 
     @Override
@@ -218,7 +163,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
             case REQUEST_PERMISSIONS: {
                 for (int i = 0; i < grantResults.length; i++) {
                     if (grantResults.length > 0 && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
-                        fn_imagespath();
+                        getImagePath();
                     } else {
                         Toast.makeText(LocalGalleryActivity.this, "The app was not allowed to read or write to your storage. Hence, it cannot function properly. Please consider granting it this permission", Toast.LENGTH_LONG).show();
                     }
@@ -226,78 +171,78 @@ public class LocalGalleryActivity extends AppCompatActivity {
             }
         }
     }
+
     /*
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+        @Override
+        protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+            super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null && data.getData() != null) {
 
-            Uri uri = data.getData();
-            String[] projection = {MediaStore.Images.Media.DATA};
+                Uri uri = data.getData();
+                String[] projection = {MediaStore.Images.Media.DATA};
 
-            Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-            cursor.moveToFirst();
+                Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+                cursor.moveToFirst();
 
-            Log.d(TAG, DatabaseUtils.dumpCursorToString(cursor));
+                Log.d(TAG, DatabaseUtils.dumpCursorToString(cursor));
 
-            int columnIndex = cursor.getColumnIndex(projection[0]);
-            String picturePath = cursor.getString(columnIndex); // returns null
-            cursor.close();
-            try {
-                Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
-                // Log.d(TAG, String.valueOf(bitmap));
+                int columnIndex = cursor.getColumnIndex(projection[0]);
+                String picturePath = cursor.getString(columnIndex); // returns null
+                cursor.close();
+                try {
+                    Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                    // Log.d(TAG, String.valueOf(bitmap));
 
-                ImageView imageView = (ImageView) findViewById(R.id.imageView);
-                imageView.setImageBitmap(bitmap);
-            } catch (IOException e) {
-                e.printStackTrace();
+                    ImageView imageView = (ImageView) findViewById(R.id.imageView);
+                    imageView.setImageBitmap(bitmap);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
-    }
 
-*/
-/*
-    List<Photo> fetchAllImages() {
-        // DATA는 이미지 파일의 스트림 데이터 경로를 나타냅니다.
-        String[] projection = { MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID };
 
-        Cursor imageCursor = getContext().getContentResolver().query(
-                MediaStore.Images.Media.EXTERNAL_CONTENT_URI, // 이미지 컨텐트 테이블
-                projection, // DATA, _ID를 출력
-                null,       // 모든 개체 출력
-                null,
-                null);      // 정렬 안 함
+        List<Photo> fetchAllImages() {
+            // DATA는 이미지 파일의 스트림 데이터 경로를 나타냅니다.
+            String[] projection = { MediaStore.Images.Media.DATA, MediaStore.Images.Media._ID };
 
-        ArrayList<Photo> result = new ArrayList<>(imageCursor.getCount());
-        int dataColumnIndex = imageCursor.getColumnIndex(projection[0]);
-        int idColumnIndex = imageCursor.getColumnIndex(projection[1]);
+            Cursor imageCursor = getContext().getContentResolver().query(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI, // 이미지 컨텐트 테이블
+                    projection, // DATA, _ID를 출력
+                    null,       // 모든 개체 출력
+                    null,
+                    null);      // 정렬 안 함
 
-        if (imageCursor == null) {
-            // Error 발생
-            // 적절하게 handling 해주세요
-        } else if (imageCursor.moveToFirst()) {
-            do {
-                String filePath = imageCursor.getString(dataColumnIndex);
-                String imageId = imageCursor.getString(idColumnIndex);
+            ArrayList<Photo> result = new ArrayList<>(imageCursor.getCount());
+            int dataColumnIndex = imageCursor.getColumnIndex(projection[0]);
+            int idColumnIndex = imageCursor.getColumnIndex(projection[1]);
 
-                Uri thumbnailUri = uriToThumbnail(imageId);
-                Uri imageUri = Uri.parse(filePath);
-                // 원본 이미지와 썸네일 이미지의 uri를 모두 담을 수 있는 클래스를 선언합니다.
-                Photo photo = new Photo(thumbnailUri, fullImageUri);
-                result.add(photo);
-            } while(imageCursor.moveToNext());
-        } else {
-            // imageCursor가 비었습니다.
+            if (imageCursor == null) {
+                // Error 발생
+                // 적절하게 handling 해주세요
+            } else if (imageCursor.moveToFirst()) {
+                do {
+                    String filePath = imageCursor.getString(dataColumnIndex);
+                    String imageId = imageCursor.getString(idColumnIndex);
+
+                    Uri thumbnailUri = uriToThumbnail(imageId);
+                    Uri imageUri = Uri.parse(filePath);
+                    // 원본 이미지와 썸네일 이미지의 uri를 모두 담을 수 있는 클래스를 선언합니다.
+                    Photo photo = new Photo(thumbnailUri, fullImageUri);
+                    result.add(photo);
+                } while(imageCursor.moveToNext());
+            } else {
+                // imageCursor가 비었습니다.
+            }
+            imageCursor.close();
+            return result;
         }
-        imageCursor.close();
-        return result;
-    }
-
+    */
     Uri uriToThumbnail(String imageId) {
         // DATA는 이미지 파일의 스트림 데이터 경로를 나타냅니다.
-        String[] projection = { MediaStore.Images.Thumbnails.DATA };
-        ContentResolver contentResolver = getContext().getContentResolver();
+        String[] projection = {MediaStore.Images.Thumbnails.DATA};
+        ContentResolver contentResolver = getApplicationContext().getContentResolver();
 
         // 원본 이미지의 _ID가 매개변수 imageId인 썸네일을 출력
         Cursor thumbnailCursor = contentResolver.query(
@@ -307,8 +252,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
                 new String[]{imageId},
                 null);
         if (thumbnailCursor == null) {
-            // Error 발생
-            // 적절하게 handling 해주세요
+            return Uri.parse(imageId);
         } else if (thumbnailCursor.moveToFirst()) {
             int thumbnailColumnIndex = thumbnailCursor.getColumnIndex(projection[0]);
 
@@ -324,6 +268,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
             thumbnailCursor.close();
             return uriToThumbnail(imageId);
         }
-    }*/
+    }
+
 
 }

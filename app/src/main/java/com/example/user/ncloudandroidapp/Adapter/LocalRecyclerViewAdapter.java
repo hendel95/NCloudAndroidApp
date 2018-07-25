@@ -2,38 +2,49 @@ package com.example.user.ncloudandroidapp.Adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.user.ncloudandroidapp.Model.GalleryItem;
-import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
+import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
 import com.example.user.ncloudandroidapp.PhotoUploadActivity;
 import com.example.user.ncloudandroidapp.R;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class LocalRecyclerViewAdapter extends ArrayAdapter<LocalGalleryItem> {
+public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final String TAG = "LocalRecyclerViewAdapter";
-    private List<LocalGalleryItem> mLocalGalleryItemList;
+    private List<Item> mItemList;
+    private int mDefaultSpanCount;
+
+    private static final int TYPE_HEADER = 0;
+    private static final int TYPE_ITEM = 1;
 
     Context mContext;
 
-    public LocalRecyclerViewAdapter(Context context){
+    public LocalRecyclerViewAdapter(Context context, GridLayoutManager gridLayoutManager, int defaultSpanCount) {
         this.mContext = context;
-        mLocalGalleryItemList = new ArrayList<>();
-    }
+        mItemList = new ArrayList<>();
+        mDefaultSpanCount = defaultSpanCount;
 
+        gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+            @Override
+            public int getSpanSize(int position) {
+                return isItemType(position) == TYPE_ITEM ? mDefaultSpanCount : 1;
+            }
+        });
+    }
 
 
     private int isItemType(int position) {
@@ -42,49 +53,57 @@ public class LocalRecyclerViewAdapter extends ArrayAdapter<LocalGalleryItem> {
        /* if(isLastPosition(position) && isFooterAdded){
             return TYPE_FOOTER;
         }*/
-        return itemObjects.get(position).getItemType() == TYPE_ITEM ? 0 : 1;
-
+        //  return mLocalGalleryItemList.get(position).getItemType() == TYPE_ITEM ? 0 : 1;
+        return mItemList.get(position).getItemType() == TYPE_ITEM ? 0 : 1;
     }
 
 
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        if (viewType == TYPE_HEADER) {
+            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_layout, parent, false);
+            return new HeaderViewHolder(layoutView);
+        } else if (viewType == TYPE_ITEM) {
+            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
+            return new ItemViewHolder(layoutView);
+        }
+        throw new RuntimeException("No match for " + viewType + ".");
+    }
 
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
 
 
-        Item mObject = itemObjects.get(position);
+        Item item = mItemList.get(position);
 
-        if (holder instanceof CustomRecyclerViewAdapter.HeaderViewHolder) { //header 인 경우 binding
-            ((CustomRecyclerViewAdapter.HeaderViewHolder) holder).headerTitle.setText(((HeaderItem) mObject).getCreatedTime());
+        if (holder instanceof LocalRecyclerViewAdapter.HeaderViewHolder) {
+            ((HeaderViewHolder) holder).headerTitle.setText(((LocalHeaderItem) item).getDateTakenTime());
+        }
+        else if (holder instanceof LocalRecyclerViewAdapter.ItemViewHolder) { //list item 인 경우 binding
+            ImageView imageView = ((LocalRecyclerViewAdapter.ItemViewHolder) holder).mPhotoImageView;
 
-        } else if (holder instanceof CustomRecyclerViewAdapter.ItemViewHolder) { //list item 인 경우 binding
-            ImageView imageView = ((CustomRecyclerViewAdapter.ItemViewHolder) holder).mPhotoImageView;
-
+            Log.i("URI=>",  ((LocalGalleryItem)item).getPath());
             Glide.with(mContext)
-                    .load(((GalleryItem) mObject).getThumbnailLink())
+                    .load("file://" + ((LocalGalleryItem)item).getThumbnailPath())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
         }
-        else if(holder instanceof CustomRecyclerViewAdapter.LoadingViewHolder){
-            //  ((LoadingViewHolder)holder)
-        }
-
 
     }
 
-    private Item getItem(int position) {
-        return itemObjects.get(position);
+    public Item getItem(int position) {
+        return mItemList.get(position);
     }
 
     @Override
     public int getItemCount() {
-        return itemObjects.size();
+        return mItemList.size();
     }
 
 
     @Override
     public int getItemViewType(int position) {
-        return itemObjects.get(position).getItemType();
+        return mItemList.get(position).getItemType();
     }
 
 
@@ -97,7 +116,7 @@ public class LocalRecyclerViewAdapter extends ArrayAdapter<LocalGalleryItem> {
         }
     }
 
-    public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+    public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
 
         public ImageView mPhotoImageView;
 
@@ -111,9 +130,10 @@ public class LocalRecyclerViewAdapter extends ArrayAdapter<LocalGalleryItem> {
         public void onClick(View view) {
             int position = getAdapterPosition();
             if (position != RecyclerView.NO_POSITION) {
-                GalleryItem galleryItem = (GalleryItem) itemObjects.get(position);
+                LocalGalleryItem localGalleryItem = (LocalGalleryItem) mItemList.get(position);
                 Intent intent = new Intent(mContext, PhotoUploadActivity.class);
-                intent.putExtra(PhotoUploadActivity.EXTRA_SPACE_PHOTO, galleryItem);
+                intent.putExtra("class", TAG);
+                intent.putExtra(PhotoUploadActivity.EXTRA_LOCAL_PHOTO, localGalleryItem);
                 view.getContext().startActivity(intent);
             }
         }
@@ -121,14 +141,14 @@ public class LocalRecyclerViewAdapter extends ArrayAdapter<LocalGalleryItem> {
     }
 
     public class LoadingViewHolder extends RecyclerView.ViewHolder {
-        public LoadingViewHolder(View itemView){
+        public LoadingViewHolder(View itemView) {
             super(itemView);
         }
     }
 
     public void add(Item item) {
-        itemObjects.add(item);
-        notifyItemInserted(itemObjects.size() - 1);
+        mItemList.add(item);
+        notifyItemInserted(mItemList.size() - 1);
     }
 
     public void addAll(List<Item> items) {
@@ -137,21 +157,19 @@ public class LocalRecyclerViewAdapter extends ArrayAdapter<LocalGalleryItem> {
         }
     }
 
-
+    /*
     public void clear() {
         isFooterAdded = false;
         while (getItemCount() > 0) {
             remove(getItem(0));
         }
-    }
+    }*/
 
     private void remove(Item item) {
-        int position = itemObjects.indexOf(item);
+        int position = mItemList.indexOf(item);
         if (position > -1) {
-            itemObjects.remove(position);
+            mItemList.remove(position);
             notifyItemRemoved(position);
         }
     }
-
-
 }

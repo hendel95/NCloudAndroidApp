@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Adapter.CustomRecyclerViewAdapter;
@@ -43,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.recycler_view)
     RecyclerView mRecyclerView;
 
+    @BindView(R.id.main_text)
+    TextView mTextView;
     //@BindView(R.id.progressBar)
     //ProgressBar mProgressBar;
 
@@ -124,12 +127,18 @@ public class MainActivity extends AppCompatActivity {
                         currentDate = items.get(0).getCreatedTime();
                         mAdapter.add(new HeaderItem(mCustomDateFormat.dateFormatting(currentDate, Item.HEADER_ITEM_TYPE)));
                         configViews(items);
+                    }else{
+                        mTextView.setText(R.string.empty_file);
+                        mTextView.bringToFront();
                     }
                     if (items.size() >= PAGE_SIZE) {
                         mAdapter.addFooter();
                     } else {
                         isLastPage = true;
                     }
+                }else{
+                    mTextView.setText(R.string.empty_file);
+                    mTextView.bringToFront();
                 }
 
             } else if (response.code() == 400) {
@@ -142,6 +151,9 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
             }else if (response.code() == 504) {
                 Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_504), Toast.LENGTH_SHORT).show();
+            }else if(response.code() == 200 && galleryItems == null){
+                mTextView.setText(R.string.empty_file);
+                mTextView.bringToFront();
             }
         }
 
