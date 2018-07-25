@@ -157,13 +157,13 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         }
     }
 
-    /*
+
     public void clear() {
-        isFooterAdded = false;
+    //    isFooterAdded = false;
         while (getItemCount() > 0) {
             remove(getItem(0));
         }
-    }*/
+    }
 
     private void remove(Item item) {
         int position = mItemList.indexOf(item);

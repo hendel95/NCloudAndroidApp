@@ -95,6 +95,7 @@ public class LocalGalleryActivity extends AppCompatActivity {
         } else {
             //사용 권한이 있음을 확인하는 경우
             Log.e("Else", "Else");
+            mLocalRecyclerViewAdapter.clear();
             getImagePath();
         }
 
