@@ -2,6 +2,10 @@ package com.example.user.ncloudandroidapp.Adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -11,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
@@ -20,6 +25,7 @@ import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
 import com.example.user.ncloudandroidapp.PhotoUploadActivity;
 import com.example.user.ncloudandroidapp.R;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,15 +84,22 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
 
         if (holder instanceof LocalRecyclerViewAdapter.HeaderViewHolder) {
             ((HeaderViewHolder) holder).headerTitle.setText(((LocalHeaderItem) item).getDateTakenTime());
-        }
-        else if (holder instanceof LocalRecyclerViewAdapter.ItemViewHolder) { //list item 인 경우 binding
+        } else if (holder instanceof LocalRecyclerViewAdapter.ItemViewHolder) { //list item 인 경우 binding
             ImageView imageView = ((LocalRecyclerViewAdapter.ItemViewHolder) holder).mPhotoImageView;
 
-            Log.i("URI=>",  ((LocalGalleryItem)item).getPath());
+            Log.i("URI=>", ((LocalGalleryItem) item).getPath());
+
+
             Glide.with(mContext)
-                    .load("file://" + ((LocalGalleryItem)item).getThumbnailPath())
+                    .load(((LocalGalleryItem) item).getPath())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
+
+         /* Glide.with(mContext)
+                    .load(((LocalGalleryItem) item).getThumbnailPath())
+                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
+                    .into(imageView);*/
+
         }
 
     }
@@ -116,7 +129,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         }
     }
 
-    public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+    public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         public ImageView mPhotoImageView;
 
@@ -159,7 +172,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
 
 
     public void clear() {
-    //    isFooterAdded = false;
+        //    isFooterAdded = false;
         while (getItemCount() > 0) {
             remove(getItem(0));
         }
@@ -172,4 +185,87 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             notifyItemRemoved(position);
         }
     }
+
+
+    public int exifOrientationToDegrees(int exifOrientation) {
+        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
+            return 90;
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {
+            return 180;
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            return 270;
+        }
+        return 0;
+    }
+
+    public Bitmap rotate(Bitmap bitmap, int degrees)
+    {
+        if(degrees != 0 && bitmap != null)
+        {
+            Matrix m = new Matrix();
+            m.setRotate(degrees, (float) bitmap.getWidth() / 2,
+                    (float) bitmap.getHeight() / 2);
+
+            try
+            {
+                Bitmap converted = Bitmap.createBitmap(bitmap, 0, 0,
+                        bitmap.getWidth(), bitmap.getHeight(), m, true);
+                if(bitmap != converted)
+                {
+                    bitmap.recycle();
+                    bitmap = converted;
+                }
+            }
+            catch(OutOfMemoryError ex)
+            {
+                // 메모리가 부족하여 회전을 시키지 못할 경우 그냥 원본을 반환합니다.
+            }
+        }
+        return bitmap;
+    }
+
+    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_NORMAL:
+                return bitmap;
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setRotate(180);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(-90);
+                break;
+            default:
+                return bitmap;
+        }
+        try {
+            Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            return bmRotated;
+        }
+        catch (OutOfMemoryError e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
 }

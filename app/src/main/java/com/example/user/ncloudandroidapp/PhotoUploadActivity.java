@@ -52,13 +52,19 @@ public class PhotoUploadActivity extends AppCompatActivity {
                 break;
             case LOCAL:
                 LocalGalleryItem localGalleryItem = getIntent().getParcelableExtra(EXTRA_LOCAL_PHOTO);
-
+/*
                 Glide.with(this)
                         .load("file://" + localGalleryItem.getPath())
                         .apply(RequestOptions.fitCenterTransform().error(R.drawable.error_img)
                                 .placeholder(R.drawable.loading_img))
                         .into(detailedImage);
+*/
 
+                Glide.with(this)
+                        .load(localGalleryItem.getPath())
+                        .apply(RequestOptions.fitCenterTransform().error(R.drawable.error_img)
+                                .placeholder(R.drawable.loading_img))
+                        .into(detailedImage);
                 break;
         }
 

@@ -1,5 +1,6 @@
 package com.example.user.ncloudandroidapp.Model;
 
+import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -21,6 +22,7 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     private String dateTakenTime;
     @SerializedName("thumbnailPath")
     private String thumbnailPath;
+
     public LocalGalleryItem(){
 
     }
@@ -56,6 +58,6 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(path);
         dest.writeString(dateTakenTime);
-        dest.writeString(thumbnailPath);
+        dest.writeValue(thumbnailPath);
     }
 }

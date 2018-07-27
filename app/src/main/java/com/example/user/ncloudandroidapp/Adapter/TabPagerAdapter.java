@@ -5,8 +5,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
-import com.example.user.ncloudandroidapp.TabFragment1;
-import com.example.user.ncloudandroidapp.TabFragment2;
+import com.example.user.ncloudandroidapp.GDriveGalleryFragment;
+import com.example.user.ncloudandroidapp.LocalGalleryFragment;
 
 public class TabPagerAdapter extends FragmentStatePagerAdapter {
 
@@ -24,11 +24,12 @@ public class TabPagerAdapter extends FragmentStatePagerAdapter {
         // Returning the current tabs
         switch (position) {
             case 0:
-                TabFragment1 tabFragment1 = new TabFragment1();
-                return tabFragment1;
+                GDriveGalleryFragment gDriveGalleryFragment = new GDriveGalleryFragment();
+                return gDriveGalleryFragment;
             case 1:
-                TabFragment2 tabFragment2 = new TabFragment2();
-                return tabFragment2;
+                LocalGalleryFragment localGalleryFragment = new LocalGalleryFragment();
+                return localGalleryFragment;
+
 
             default:
                 return null;

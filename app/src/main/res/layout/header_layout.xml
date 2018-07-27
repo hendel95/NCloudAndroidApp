@@ -4,6 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="50dp"
+    android:background="@color/colorHeader"
     >
 
     <TextView
@@ -16,10 +17,22 @@
         android:layout_marginTop="8dp"
         android:text="This is header item"
         android:textSize="20sp"
+        android:gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.53" />
 
+    <ImageView
+        android:layout_width="20sp"
+        android:layout_height="20sp"
+         android:layout_margin="10dp"
+        android:src="@drawable/photo_album_icon"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/headerSize"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/headerTitle"
+        app:layout_constraintTop_toTopOf="parent" />
     <TextView
         android:id="@+id/headerSize"
         android:layout_width="wrap_content"
@@ -30,7 +43,7 @@
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
-        android:text="size"
+        android:text="100+"
         android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"

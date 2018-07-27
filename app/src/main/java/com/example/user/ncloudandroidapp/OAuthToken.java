@@ -99,7 +99,7 @@ public class OAuthToken {
                     return oauthToken;
                 } else {
 
-                    Log.e(TAG, "NOT (expiredAfter==0||now<expiredAfter) current case, token is valid");
+                    Log.e(TAG, "NOT (expiredAfter==0||now＞expiredAfter) current case, token is valid");
                     //rebuild the object according to the SP
                     OAuthToken oauthToken = new OAuthToken();
                     oauthToken.setAccessToken(sp.getString(SP_TOKEN_KEY, null));
