@@ -22,6 +22,8 @@ public class GalleryItem extends Item implements Parcelable {
     private String thumbnailLink;
     @SerializedName("createdTime")
     private String createdTime;
+  //  @SerializedName("imageMediaMetadata/time")
+  //  private String dateTakenTime;
 
     public String cr = "\n";
 
@@ -31,6 +33,7 @@ public class GalleryItem extends Item implements Parcelable {
         this.name = in.readString();
         this.mimeType = in.readString();
         this.thumbnailLink = in.readString();
+  //      this.dateTakenTime = in.readString();
 
     }
 
@@ -70,6 +73,7 @@ public class GalleryItem extends Item implements Parcelable {
         dest.writeString(name);
         dest.writeString(mimeType);
         dest.writeString(thumbnailLink);
+    //    dest.writeString(dateTakenTime);
     }
 
     public int getItemType() {

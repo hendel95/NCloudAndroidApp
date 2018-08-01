@@ -1,42 +1,22 @@
 package com.example.user.ncloudandroidapp;
 
-import android.support.design.widget.NavigationView;
 import android.support.design.widget.TabLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.CheckBox;
 import android.widget.Toast;
 
-import com.example.user.ncloudandroidapp.Adapter.CustomRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Adapter.TabPagerAdapter;
-import com.example.user.ncloudandroidapp.Model.GalleryItem;
-import com.example.user.ncloudandroidapp.Model.GalleryItems;
-import com.example.user.ncloudandroidapp.Model.HeaderItem;
-import com.example.user.ncloudandroidapp.Model.Item;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity{
     private static final String TAG = "MainActivity";
@@ -45,12 +25,14 @@ public class MainActivity extends AppCompatActivity{
     @BindView(R.id.tabLayout)
     TabLayout mTabLayout;
 
-   @BindView(R.id.toolbar)
-   Toolbar mToolbar;
+     @BindView(R.id.toolbar)
+     Toolbar mToolbar;
 
     @BindView(R.id.pager)
     ViewPager mViewPager;
 
+  //  @BindView(R.id.check_box)
+ //   CheckBox mCheckBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +48,8 @@ public class MainActivity extends AppCompatActivity{
         actionBar.setDisplayShowTitleEnabled(false);
 
 
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_menu_dark);
 
         // Initializing the TabLayout
         mTabLayout.addTab(mTabLayout.newTab().setText("구글 드라이브"));
@@ -109,11 +93,12 @@ public class MainActivity extends AppCompatActivity{
     //추가된 소스, ToolBar에 추가된 항목의 select 이벤트를 처리하는 함수
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        //return super.onOptionsItemSelected(item);
         switch (item.getItemId()) {
-            case R.id.action_settings:
+            case R.id.action_check:
                 // User chose the "Settings" item, show the app settings UI...
+              //  mCheckBox.setVisibility(View.VISIBLE);
                 Toast.makeText(getApplicationContext(), "사진 선택 버튼", Toast.LENGTH_LONG).show();
+                getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_back);
                 return true;
 
             default:

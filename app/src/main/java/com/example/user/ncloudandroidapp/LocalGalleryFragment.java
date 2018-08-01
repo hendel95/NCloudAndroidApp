@@ -1,15 +1,12 @@
 package com.example.user.ncloudandroidapp;
 
-import android.Manifest;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -70,10 +67,9 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
     private String TAG = "LocalGalleryActivity";
     private static final int DEFAULT_SPAN_COUNT = 3;
 
-    private String currentDate;
     private Date compareDate = new Date();
     private Date date = new Date();
-    public static List<Item> sItemList = new ArrayList<>();
+   // public static List<Item> sItemList = new ArrayList<>();
 
     private static final int REQUEST_PERMISSIONS = 100;
     CustomDateFormat dateFormat = new CustomDateFormat();
@@ -115,13 +111,14 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_local_gallery, container, false);
         ButterKnife.bind(this, view);
-        gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
+
 
         Toolbar toolbar= (Toolbar) getActivity().findViewById(R.id.toolbar);
         toolbar.inflateMenu(R.menu.menu);
         toolbar.setOnMenuItemClickListener(this);
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
+        gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
 
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
@@ -129,55 +126,9 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT);
 
         mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
-/*
-        //갤러리 사용 권한 체크 ( 사용권한이 없을 경우 -1)
-        if ((ContextCompat.checkSelfPermission(getActivity(),
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) && (ContextCompat.checkSelfPermission(getActivity(),
-                android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
-            //권한이 없을 경우
 
-            //최소 권한 요청인지, 혹은 사용자에 의한 재 요청인지 확인
-            if ((ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) && (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE))) {
-                //사용자가 임의로 권한을 취소시킨 경우
+        permissionCheck();
 
-            } else {
-                //최초로 권한을 요청하는 경우 (첫 실행)
-                ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_PERMISSIONS);
-            }
-        } else {
-            //사용 권한이 있음을 확인하는 경우
-            Log.e("Else", "Else");
-
-            getImagePath();
-        }*/
-        //갤러리 사용 권한 체크 ( 사용권한이 없을 경우 -1)
-        if ((ContextCompat.checkSelfPermission(getActivity(),
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) && (ContextCompat.checkSelfPermission(getActivity(),
-                android.Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
-            //권한이 없을 경우
-
-            //최소 권한 요청인지, 혹은 사용자에 의한 재 요청인지 확인
-            if ((ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE)) && (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-                    android.Manifest.permission.READ_EXTERNAL_STORAGE))) {
-                //사용자가 임의로 권한을 취소시킨 경우
-
-            } else {
-                //최초로 권한을 요청하는 경우 (첫 실행)
-                ActivityCompat.requestPermissions(getActivity(),
-                        new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_PERMISSIONS);
-            }
-        } else {
-            //사용 권한이 있음을 확인하는 경우
-            Log.e("Else", "Else");
-
-            getImagePath();
-        }
         return view;
     }
 
@@ -192,14 +143,49 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                mLocalRecyclerViewAdapter.clear();
+                //mLocalRecyclerViewAdapter.clear();
                 mLocalRecyclerViewAdapter.notifyDataSetChanged();
-                getImagePath();
-                mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
+                permissionCheck();
+
+                //  getImagePath();
+                //mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
                 mSwipeRefreshLayout.setRefreshing(false);
             }
         }, 1000);
 
+    }
+
+    public void permissionCheck(){
+        //갤러리 사용 권한 체크 ( 사용권한이 없을 경우 -1)
+        if ((ContextCompat.checkSelfPermission(getActivity(),
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
+            //권한이 없을 경우
+
+            //최소 권한 요청인지, 혹은 사용자에 의한 재 요청인지 확인
+            if ((shouldShowRequestPermissionRationale(
+                    android.Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
+                //사용자가 임의로 권한을 취소시킨 경우
+                //Toast.makeText(getActivity(), "사용자에 의한 권한 취소", Toast.LENGTH_LONG).show();
+            } else {
+                //최초로 권한을 요청하는 경우 (첫 실행)
+                //Fragment일 때 ActivityCompat.requestPermissions 말고requestPermissions를 사용해야함.
+                requestPermissions( new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                        REQUEST_PERMISSIONS);
+               /* ActivityCompat.requestPermissions(getActivity(),
+                        new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
+                        REQUEST_PERMISSIONS);
+                */
+                //Toast.makeText(getActivity(), "최초 권한 요청.", Toast.LENGTH_LONG).show();
+
+            }
+        } else {
+            //사용 권한이 있음을 확인하는 경우
+            Log.e("Else", "Else");
+            //Toast.makeText(getActivity(), "권한 확인 완료.", Toast.LENGTH_LONG).show();
+
+            getImagePath();
+
+        }
     }
 
     public void setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener listener) {
@@ -231,28 +217,31 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         // TODO: Update argument type and name
         void onFragmentInteraction(Uri uri);
     }
-
     public List<Item> getImagePath() {
+
+
+        List<Item> sItemList = new ArrayList<>();
         sItemList.clear();
         mLocalRecyclerViewAdapter.clear();
         boolean isFirstItem = true;
         Uri uri;
         Cursor cursor;
-        int column_index_data, column_index_date_taken, column_index_image_id;
+        int column_index_data, column_index_date_taken, column_index_image_id, column_index_mime_type, column_index_name;
 
         String absolutePathOfImage = null;
         String image_id = null;
         uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
-        String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.Images.Media._ID};
+        String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.MediaColumns.MIME_TYPE, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns._ID};
 
         final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
         cursor = getActivity().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
 
         column_index_data = cursor.getColumnIndex(projection[0]);
         column_index_date_taken = cursor.getColumnIndex(projection[1]);
-        column_index_image_id = cursor.getColumnIndex(projection[2]);
-
+        column_index_mime_type = cursor.getColumnIndex(projection[2]);
+        column_index_name = cursor.getColumnIndex(projection[3]);
+        column_index_image_id = cursor.getColumnIndex(projection[4]);
         if(cursor.getCount() == 0){
             mTextView.setText(R.string.empty_file);
             mTextView.bringToFront();
@@ -261,11 +250,16 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
 
         while (cursor.moveToNext()) {
             absolutePathOfImage = cursor.getString(column_index_data);
-            image_id = cursor.getString(column_index_image_id);
 
             LocalGalleryItem obj_model = new LocalGalleryItem();
             obj_model.setPath(absolutePathOfImage);
+
+            obj_model.setName(cursor.getString(column_index_name));
+
+            image_id = cursor.getString(column_index_image_id);
             obj_model.setThumbnailPath(uriToThumbnail(image_id).toString());
+            obj_model.setMimeType(cursor.getString(column_index_mime_type));
+            Log.i("LOCAL", "NAME" + obj_model.getName() + "MIME" + obj_model.getMimeType());
             date.setTime(Long.parseLong(cursor.getString(column_index_date_taken)));
             obj_model.setDateTakenTime(dateFormat.DateToString(date, Item.GRID_ITEM_TYPE));
 
@@ -292,17 +286,24 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         return sItemList;
     }
 
+    /*권한이 없을 경우, 권한 사용 동의창을 띄우고, 아래와 같이 동의, 비동의에 대한 콜백을 받습니다.*/
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
         switch (requestCode) {
             case REQUEST_PERMISSIONS: {
+                //갤러리 사용 권한에 대한 콜백을 받음
                 for (int i = 0; i < grantResults.length; i++) {
+
                     if (grantResults.length > 0 && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                        //권한 동의 버튼 선택
                         getImagePath();
                     } else {
-                        Toast.makeText(getActivity(), "The app was not allowed to read or write to your storage. Hence, it cannot function properly. Please consider granting it this permission", Toast.LENGTH_LONG).show();
+                        //사용자가 권한 동의를 안함
+                        //권한 동의 안함 버튼 선택
+                        Toast.makeText(getActivity(), "앱을 실행하기위해 동의를 해 주셔야합니다.", Toast.LENGTH_LONG).show();
+
                     }
                 }
             }

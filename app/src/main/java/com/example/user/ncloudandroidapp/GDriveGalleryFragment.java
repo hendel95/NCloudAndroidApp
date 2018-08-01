@@ -1,6 +1,5 @@
 package com.example.user.ncloudandroidapp;
 
-import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,7 +16,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.user.ncloudandroidapp.Adapter.CustomRecyclerViewAdapter;
+import com.example.user.ncloudandroidapp.Adapter.GDriveRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
@@ -26,7 +25,6 @@ import com.example.user.ncloudandroidapp.Model.Item;
 import java.util.ArrayList;
 import java.util.List;
 
-import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import retrofit2.Call;
@@ -61,7 +59,7 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
     private String PAGE_TOKEN = null;
 
     private static final int DEFAULT_SPAN_COUNT = 3;
-    private CustomRecyclerViewAdapter mAdapter;
+    private GDriveRecyclerViewAdapter mAdapter;
     private CustomDateFormat mCustomDateFormat = new CustomDateFormat();
     private GridLayoutManager gridLayoutManager;
 
@@ -78,6 +76,7 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
 
     @BindView(R.id.swipeRefreshGdrive)
     SwipeRefreshLayout mSwipeRefreshLayout;
+
 
     public GDriveGalleryFragment() {
         // Required empty public constructor
@@ -135,7 +134,7 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
         mRecyclerView.setLayoutManager(gridLayoutManager);
         mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
 
-        mAdapter = new CustomRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT);
+        mAdapter = new GDriveRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT);
         mRecyclerView.setAdapter(mAdapter);
 
         startList();
@@ -177,7 +176,7 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
                 mAdapter.clear();
                 mAdapter.notifyDataSetChanged();
                 startList();
-                mRecyclerView.setAdapter(mAdapter);
+                //mRecyclerView.setAdapter(mAdapter);
                 mSwipeRefreshLayout.setRefreshing(false);
             }
         }, 1000);

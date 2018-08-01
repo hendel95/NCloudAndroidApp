@@ -50,11 +50,10 @@
             android:name=".PhotoUploadActivity"
             android:configChanges="keyboard|orientation|screenSize"
             android:label="@string/app_name"
-            android:screenOrientation="portrait"></activity>
-        <activity
-            android:name=".NavigationDrawer"
-            android:label="@string/title_activity_navigation_drawer"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
+            android:screenOrientation="portrait" />
+        <activity android:name=".LocalGalleryDetailedImage" />
+        <activity android:name=".LocalDetailedImageActivity" />
+        <activity android:name=".GDriveDetailedImageActivity"></activity>
     </application>
 
 </manifest>

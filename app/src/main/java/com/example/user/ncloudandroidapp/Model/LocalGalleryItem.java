@@ -16,12 +16,16 @@ import lombok.Setter;
 @Setter
 public class LocalGalleryItem extends Item  implements Parcelable {
 
+    @SerializedName("name")
+    private String name;
     @SerializedName("path")
     private String path;
     @SerializedName("dateTakenTime")
     private String dateTakenTime;
     @SerializedName("thumbnailPath")
     private String thumbnailPath;
+    @SerializedName("mimeType")
+    private String mimeType;
 
     public LocalGalleryItem(){
 
@@ -30,10 +34,13 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     public int getItemType() {
         return GRID_ITEM_TYPE;
     }
+
     public LocalGalleryItem(Parcel in){
+        this.name = in.readString();
         this.path = in.readString();
         this.dateTakenTime = in.readString();
         this.thumbnailPath = in.readString();
+        this.mimeType = in.readString();
     }
 
     public static final Creator<LocalGalleryItem> CREATOR = new Creator<LocalGalleryItem>() {
@@ -56,8 +63,10 @@ public class LocalGalleryItem extends Item  implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(name);
         dest.writeString(path);
         dest.writeString(dateTakenTime);
-        dest.writeValue(thumbnailPath);
+        dest.writeString(thumbnailPath);
+        dest.writeString(mimeType);
     }
 }

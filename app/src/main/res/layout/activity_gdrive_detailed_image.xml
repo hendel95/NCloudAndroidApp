@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    tools:context=".GDriveDetailedImageActivity">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar_detailed_gdrive"
+        android:layout_alignParentTop="true"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/my_gradient"
+        android:minHeight="?actionBarSize"
+        android:theme="@style/ToolbarTheme" />
+
+    <com.github.chrisbanes.photoview.PhotoView
+        android:id="@+id/gdrive_detailed_photo"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+</android.support.constraint.ConstraintLayout>

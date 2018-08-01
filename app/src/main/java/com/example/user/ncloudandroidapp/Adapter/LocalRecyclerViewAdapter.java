@@ -19,10 +19,10 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.user.ncloudandroidapp.LocalDetailedImageActivity;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
-import com.example.user.ncloudandroidapp.PhotoUploadActivity;
 import com.example.user.ncloudandroidapp.R;
 
 import java.io.IOException;
@@ -144,9 +144,9 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             int position = getAdapterPosition();
             if (position != RecyclerView.NO_POSITION) {
                 LocalGalleryItem localGalleryItem = (LocalGalleryItem) mItemList.get(position);
-                Intent intent = new Intent(mContext, PhotoUploadActivity.class);
+                Intent intent = new Intent(mContext, LocalDetailedImageActivity.class);
                 intent.putExtra("class", TAG);
-                intent.putExtra(PhotoUploadActivity.EXTRA_LOCAL_PHOTO, localGalleryItem);
+                intent.putExtra(LocalDetailedImageActivity.EXTRA_LOCAL_PHOTO, localGalleryItem);
                 view.getContext().startActivity(intent);
             }
         }

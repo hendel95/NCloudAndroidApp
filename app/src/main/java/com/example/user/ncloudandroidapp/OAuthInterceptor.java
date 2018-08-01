@@ -25,7 +25,7 @@ public class OAuthInterceptor implements Interceptor{
             Log.e(TAG,"In the interceptor adding the header authorization with : "+accessTokenType+" " + accessToken);
             builder.header("Authorization",accessTokenType+" " + accessToken);
         }else{
-            Log.e(TAG,"In the interceptor there is a fuck with : "+accessTokenType+" " + accessToken);
+            Log.e(TAG,"문제가 발생하였습니다 : "+accessTokenType+" " + accessToken);
             //you should launch the loginActivity to fix that:
             Intent i = new Intent(MyApplication.instance, MainActivity.class);
             i.setFlags(Intent.FLAG_ACTIVITY_NO_HISTORY);
