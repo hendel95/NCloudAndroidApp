@@ -13,6 +13,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,6 +22,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.user.ncloudandroidapp.LocalDetailedImageActivity;
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
@@ -80,7 +83,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
 
 
-        Item item = mItemList.get(position);
+        final Item item = mItemList.get(position);
 
         if (holder instanceof LocalRecyclerViewAdapter.HeaderViewHolder) {
             ((HeaderViewHolder) holder).headerTitle.setText(((LocalHeaderItem) item).getDateTakenTime());
@@ -89,16 +92,20 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
 
             Log.i("URI=>", ((LocalGalleryItem) item).getPath());
 
+            CheckBox checkBox = ((LocalRecyclerViewAdapter.ItemViewHolder) holder).mCheckBox;
+            checkBox.setOnCheckedChangeListener(null);
+            checkBox.setChecked(((LocalGalleryItem) item).isChecked());
+            checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    ((LocalGalleryItem) item).setChecked(isChecked);
+                }
+            });
 
             Glide.with(mContext)
                     .load(((LocalGalleryItem) item).getPath())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
-
-         /* Glide.with(mContext)
-                    .load(((LocalGalleryItem) item).getThumbnailPath())
-                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
-                    .into(imageView);*/
 
         }
 
@@ -132,10 +139,13 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
     public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         public ImageView mPhotoImageView;
+        public CheckBox mCheckBox;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
             mPhotoImageView = (ImageView) itemView.findViewById(R.id.fragment_gallery_image_view);
+            mCheckBox = (CheckBox) itemView.findViewById(R.id.check_box);
+
             itemView.setOnClickListener(this);
         }
 
@@ -198,26 +208,20 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         return 0;
     }
 
-    public Bitmap rotate(Bitmap bitmap, int degrees)
-    {
-        if(degrees != 0 && bitmap != null)
-        {
+    public Bitmap rotate(Bitmap bitmap, int degrees) {
+        if (degrees != 0 && bitmap != null) {
             Matrix m = new Matrix();
             m.setRotate(degrees, (float) bitmap.getWidth() / 2,
                     (float) bitmap.getHeight() / 2);
 
-            try
-            {
+            try {
                 Bitmap converted = Bitmap.createBitmap(bitmap, 0, 0,
                         bitmap.getWidth(), bitmap.getHeight(), m, true);
-                if(bitmap != converted)
-                {
+                if (bitmap != converted) {
                     bitmap.recycle();
                     bitmap = converted;
                 }
-            }
-            catch(OutOfMemoryError ex)
-            {
+            } catch (OutOfMemoryError ex) {
                 // 메모리가 부족하여 회전을 시키지 못할 경우 그냥 원본을 반환합니다.
             }
         }
@@ -261,8 +265,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
             bitmap.recycle();
             return bmRotated;
-        }
-        catch (OutOfMemoryError e) {
+        } catch (OutOfMemoryError e) {
             e.printStackTrace();
             return null;
         }

@@ -1,6 +1,12 @@
 package com.example.user.ncloudandroidapp;
 
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.opengl.Visibility;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -28,6 +34,7 @@ import com.github.chrisbanes.photoview.PhotoView;
 import org.w3c.dom.Text;
 
 import java.io.File;
+import java.io.IOException;
 
 import butterknife.BindInt;
 import butterknife.BindView;
@@ -111,6 +118,9 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
                 Toast.makeText(LocalDetailedImageActivity.this, "Back Button", Toast.LENGTH_LONG).show();
                 finish();
                 return true;
+            case R.id.action_local_delete:
+                delete();
+                return true;
             default:
 
                 // If we got here, the user's action was not recognized.
@@ -121,6 +131,41 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
         }
     }
 
+    private void delete(){
+        String file_path = Environment.getExternalStorageDirectory() + File.separator + localGalleryItem.getName();
+        File file = new File(localGalleryItem.getPath());
+        Log.i(TAG, file.getAbsolutePath());
+
+        if(file.exists()){
+
+            file.delete();
+           // deleteFileFromMediaStore(getApplicationContext().getContentResolver(), file);
+            getApplicationContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + localGalleryItem.getPath() )));
+
+        }
+
+    }
+    public static void deleteFileFromMediaStore(
+            final ContentResolver contentResolver, final File file) {
+        String canonicalPath;
+        try {
+            canonicalPath = file.getCanonicalPath();
+        } catch (IOException e) {
+            canonicalPath = file.getAbsolutePath();
+        }
+        final Uri uri = MediaStore.Files.getContentUri("external");
+        final int result = contentResolver.delete(uri,
+                MediaStore.Files.FileColumns.DATA + "=?",
+                new String[] { canonicalPath });
+        if (result == 0) {
+            final String absolutePath = file.getAbsolutePath();
+            if (!absolutePath.equals(canonicalPath)) {
+                contentResolver.delete(uri, MediaStore.Files.FileColumns.DATA
+                        + "=?", new String[] { absolutePath });
+            }
+        }
+
+    }
     private void upload() {
 
         File file = new File(localGalleryItem.getPath());

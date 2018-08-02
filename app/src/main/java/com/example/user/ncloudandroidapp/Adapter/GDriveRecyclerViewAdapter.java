@@ -7,6 +7,7 @@ import android.support.v7.view.menu.MenuView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -48,14 +49,14 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
-                return isItemType(position) == TYPE_ITEM  ? mDefaultSpanCount : 1;
+                return isItemType(position) == TYPE_ITEM ? mDefaultSpanCount : 1;
             }
         });
     }
 
     private int isItemType(int position) {
         //int itemType = itemObjects.get(position).getItemType();
-       // Log.d(TAG, "ItemType = " + Integer.toString(itemType));
+        // Log.d(TAG, "ItemType = " + Integer.toString(itemType));
        /* if(isLastPosition(position) && isFooterAdded){
             return TYPE_FOOTER;
         }*/
@@ -65,7 +66,7 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
 
 
     public boolean isLastPosition(int position) {
-        return (position == itemObjects.size()-1);
+        return (position == itemObjects.size() - 1);
     }
 
     @Override
@@ -76,8 +77,7 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         } else if (viewType == TYPE_ITEM) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
             return new ItemViewHolder(layoutView);
-        }
-        else if(viewType == TYPE_FOOTER){
+        } else if (viewType == TYPE_FOOTER) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_item, parent, false);
             return new LoadingViewHolder(layoutView);
         }
@@ -88,32 +88,33 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
 
 
-        Item mObject = itemObjects.get(position);
+        final Item mObject = itemObjects.get(position);
 
         if (holder instanceof HeaderViewHolder) { //header 인 경우 binding
             ((HeaderViewHolder) holder).headerTitle.setText(((HeaderItem) mObject).getCreatedTime());
 
         } else if (holder instanceof ItemViewHolder) { //list item 인 경우 binding
             ImageView imageView = ((ItemViewHolder) holder).mPhotoImageView;
-            /*final CheckBox checkBox = ((ItemViewHolder)holder).mCheckBox;
+
+            CheckBox checkBox = ((ItemViewHolder) holder).mCheckBox;
 
             checkBox.setOnCheckedChangeListener(null);
 
-            checkBox.setChecked(false);
+            checkBox.setChecked(((GalleryItem) mObject).isChecked());
+
             checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    checkBox.setSelected(isChecked);
+                    ((GalleryItem) mObject).setChecked(isChecked);
                 }
             });
-*/
+
             Glide.with(mContext)
                     .load(((GalleryItem) mObject).getThumbnailLink())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
-        }
-        else if(holder instanceof LoadingViewHolder){
-          //  ((LoadingViewHolder)holder)
+        } else if (holder instanceof LoadingViewHolder) {
+            //  ((LoadingViewHolder)holder)
         }
 
 
@@ -147,18 +148,19 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         public ImageView mPhotoImageView;
-      //  public CheckBox mCheckBox;
+        public CheckBox mCheckBox;
 
         public ItemViewHolder(View itemView) {
             super(itemView);
             mPhotoImageView = (ImageView) itemView.findViewById(R.id.fragment_gallery_image_view);
-       //     mCheckBox = (CheckBox)itemView.findViewById(R.id.check_box);
+            mCheckBox = (CheckBox) itemView.findViewById(R.id.check_box);
             itemView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View view) {
             int position = getAdapterPosition();
+
             if (position != RecyclerView.NO_POSITION) {
                 GalleryItem galleryItem = (GalleryItem) itemObjects.get(position);
                 Intent intent = new Intent(mContext, GDriveDetailedImageActivity.class);
@@ -166,12 +168,14 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
                 intent.putExtra(GDriveDetailedImageActivity.EXTRA_GDRIVE_PHOTO, galleryItem);
                 view.getContext().startActivity(intent);
             }
+
+
         }
 
     }
 
     public class LoadingViewHolder extends RecyclerView.ViewHolder {
-        public LoadingViewHolder(View itemView){
+        public LoadingViewHolder(View itemView) {
             super(itemView);
         }
     }
@@ -187,7 +191,7 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         }
     }
 
-    public void addFooter(){
+    public void addFooter() {
         isFooterAdded = true;
         add(new Item() {
             @Override

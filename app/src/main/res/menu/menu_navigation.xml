@@ -4,18 +4,15 @@
     >
     <!-- "Mark Favorite", should appear as action button if possible -->
     <item
-        android:id="@+id/action_download"
-        android:title="download_btn"
+        android:id="@+id/navigation_uplad"
         android:icon="@drawable/ic_action_download"
         app:showAsAction="ifRoom"/>
 
-    <item android:id="@+id/action_gdrive_info"
-        android:title="사진 정보"
-        app:showAsAction="never"/>
+    <item
+        android:id="@+id/navigation_delete"
+        android:icon="@drawable/ic_action_trash_light"
+        app:showAsAction="ifRoom"/>
 
-    <item android:id="@+id/action_gdrive_delete"
-        android:title="사진 삭제"
-        app:showAsAction="never"/>
 
 
 </menu>

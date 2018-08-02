@@ -22,6 +22,9 @@ public class GalleryItem extends Item implements Parcelable {
     private String thumbnailLink;
     @SerializedName("createdTime")
     private String createdTime;
+
+
+    private boolean isChecked;
   //  @SerializedName("imageMediaMetadata/time")
   //  private String dateTakenTime;
 

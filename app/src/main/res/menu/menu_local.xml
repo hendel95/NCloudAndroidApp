@@ -9,11 +9,11 @@
         android:icon="@drawable/ic_action_upload"
         app:showAsAction="ifRoom"/>
 
-    <item android:id="@+id/action_settings_local1"
+    <item android:id="@+id/action_local_info"
         android:title="사진 정보"
         app:showAsAction="never"/>
 
-    <item android:id="@+id/action_settings_local2"
+    <item android:id="@+id/action_local_delete"
         android:title="사진 삭제"
         app:showAsAction="never"/>
 

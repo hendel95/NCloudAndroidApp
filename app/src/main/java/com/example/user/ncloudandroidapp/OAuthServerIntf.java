@@ -6,6 +6,7 @@ import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.http.DELETE;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
@@ -61,6 +62,11 @@ public interface OAuthServerIntf {
     @GET("drive/v3/files/{fileId}?alt=media")
     Call<ResponseBody> downloadFile(
             @Path("fileId") String fileId
+    );
+
+    @DELETE("drive/v3/files/{fileId}")
+    Call<ResponseBody> deleteFile(
+        @Path("fileId") String fileId
     );
 
     @GET("drive/v3/files")

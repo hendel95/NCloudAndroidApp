@@ -96,6 +96,9 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
                 Toast.makeText(GDriveDetailedImageActivity.this, "Back Button", Toast.LENGTH_LONG).show();
                 finish();
                 return true;
+            case R.id.action_gdrive_delete:
+                delete();
+                return true;
             default:
 
                 // If we got here, the user's action was not recognized.
@@ -222,6 +225,27 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
         }
     }
 
+
+    private void delete(){
+        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
+        Call<ResponseBody> responseBodyCall = server.deleteFile(galleryItem.getId());
+        responseBodyCall.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                if(response.code() == 204){
+                    Log.i(TAG, "File deleted sucessfully!!");
+                }
+                else{
+                    Log.e(TAG, "error caused from deleting function");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Log.e(TAG, "error");
+            }
+        });
+    }
 
 }
 
