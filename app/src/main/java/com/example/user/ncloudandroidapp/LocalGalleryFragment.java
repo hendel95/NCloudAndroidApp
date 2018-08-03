@@ -10,11 +10,15 @@ import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,10 +65,10 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
     SwipeRefreshLayout mSwipeRefreshLayout;
 
     LocalRecyclerViewAdapter mLocalRecyclerViewAdapter;
-    private GridLayoutManager gridLayoutManager;
+    protected GridLayoutManager gridLayoutManager;
 
     private int PICK_IMAGE_REQUEST = 1;
-    private String TAG = "LocalGalleryActivity";
+    private String TAG = "LocalGalleryFragment";
     private static final int DEFAULT_SPAN_COUNT = 3;
 
     private Date compareDate = new Date();
@@ -112,14 +116,33 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         View view = inflater.inflate(R.layout.fragment_local_gallery, container, false);
         ButterKnife.bind(this, view);
 
+        // Get the ActionBar here to configure the way it behaves.
+        // actionBar = getSupportActionBar();
+       // actionBar.setDisplayShowCustomEnabled(true); //커스터마이징 하기 위해 필요
+       // actionBar.setDisplayShowTitleEnabled(true);
 
-        Toolbar toolbar= (Toolbar) getActivity().findViewById(R.id.toolbar);
-        toolbar.inflateMenu(R.menu.menu);
-        toolbar.setOnMenuItemClickListener(this);
+
+
+      //  getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+      //  getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_menu_dark);
+
+       // Toolbar toolbar_local= (Toolbar) getActivity().findViewById(R.id.toolbar);
+        //toolbar.inflateMenu(R.menu.menu_main);
+        //toolbar.setOnMenuItemClickListener(this);
+       // setHasOptionsMenu(true);
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
         gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
+/*
+        toolbar_local.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Toolbar Clicked!!");
 
+                gridLayoutManager.scrollToPositionWithOffset(0, 0);
+            }
+        });
+*/
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
@@ -131,6 +154,14 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
 
         return view;
     }
+
+    /*
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+
+        inflater.inflate(R.menu.menu_main, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }*/
 
     @Override
     public void onRefresh() {
@@ -226,7 +257,7 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         boolean isFirstItem = true;
         Uri uri;
         Cursor cursor;
-        int column_index_data, column_index_date_taken, column_index_image_id, column_index_mime_type, column_index_name;
+        int column_index_data, column_index_date_taken, column_index_image_id, column_index_mime_type, column_index_name, column_index_orientation;
 
         String absolutePathOfImage = null;
         String image_id = null;
@@ -262,7 +293,6 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
             Log.i("LOCAL", "NAME" + obj_model.getName() + "MIME" + obj_model.getMimeType());
             date.setTime(Long.parseLong(cursor.getString(column_index_date_taken)));
             obj_model.setDateTakenTime(dateFormat.DateToString(date, Item.GRID_ITEM_TYPE));
-
             if (isFirstItem == true) {
                 compareDate.setTime(date.getTime());
                 sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));

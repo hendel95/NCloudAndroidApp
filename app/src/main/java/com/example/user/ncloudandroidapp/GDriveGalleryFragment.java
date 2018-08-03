@@ -10,6 +10,8 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -61,7 +63,7 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
     private static final int DEFAULT_SPAN_COUNT = 3;
     private GDriveRecyclerViewAdapter mAdapter;
     private CustomDateFormat mCustomDateFormat = new CustomDateFormat();
-    private GridLayoutManager gridLayoutManager;
+    protected GridLayoutManager gridLayoutManager;
 
     private String currentDate;
 
@@ -81,6 +83,8 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
     public GDriveGalleryFragment() {
         // Required empty public constructor
     }
+
+
 
     /**
      * Use this factory method to create a new instance of
@@ -104,7 +108,6 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-
     }
 
     @Override
@@ -118,16 +121,27 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
-        setHasOptionsMenu(true);
+       // setHasOptionsMenu(true);
 
-        Toolbar toolbar= (Toolbar) getActivity().findViewById(R.id.toolbar);
-        toolbar.inflateMenu(R.menu.menu);
-        toolbar.setOnMenuItemClickListener(this);
+       // Toolbar toolbar_drive= (Toolbar) getActivity().findViewById(R.id.toolbar);
+        //toolbar.inflateMenu(R.menu.menu_main);
 
+       // setHasOptionsMenu(true);
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
 
         gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
+
+        //toolbar.setOnMenuItemClickListener(this);
+/*
+        toolbar_drive.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Log.d(TAG, "Toolbar Clicked!!");
+                gridLayoutManager.scrollToPositionWithOffset(0, 0);
+            }
+        });*/
+
 
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
@@ -154,6 +168,14 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
         mSwipeRefreshLayout.setOnRefreshListener(listener);
     }
 
+/*
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.menu_main, menu);
+        super.onCreateOptionsMenu(menu, inflater);
+    }
+
+*/
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         switch (menuItem.getItemId()) {

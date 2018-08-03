@@ -19,7 +19,9 @@
     <com.github.chrisbanes.photoview.PhotoView
         android:id="@+id/local_detailed_photo"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:layout_alignParentTop="true" />
+
 <!--
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar_detailed_local_bottom"

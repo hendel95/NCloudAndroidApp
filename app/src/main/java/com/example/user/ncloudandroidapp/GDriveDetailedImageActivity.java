@@ -37,6 +37,9 @@ import retrofit2.Response;
 public class GDriveDetailedImageActivity extends AppCompatActivity {
     public static final String EXTRA_GDRIVE_PHOTO = "GDriveDetailedImageActivity";
     private static final String TAG = "GDriveDetailedImageActivity";
+    private OAuthServerIntf server;
+
+
     GalleryItem galleryItem;
 
     @BindView(R.id.gdrive_detailed_photo)
@@ -53,6 +56,8 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setSupportActionBar(mToolbar);
+
+        server = RetrofitBuilder.getOAuthClient(getApplication());
 
         // Get the ActionBar here to configure the way it behaves.
         ActionBar actionBar = getSupportActionBar();
@@ -118,7 +123,7 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
 
     public void download() {
 
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
+      //  OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
         Call<ResponseBody> responseBodyCall = server.downloadFile(galleryItem.getId());
         responseBodyCall.enqueue(new Callback<ResponseBody>() {
             @Override
@@ -155,7 +160,7 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
 
         try {
             //새로운 Directory 생성
-            String file_url = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "GDRIVE" + File.separator;
+            String file_url = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "GDRIVE" ;
 
 
             File dir = new File(file_url);
@@ -200,8 +205,9 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
 
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Images.Media.DATA,
-                       localPath);
+                       downloadFile.getAbsolutePath());
                 values.put(MediaStore.Images.Media.MIME_TYPE, galleryItem.getMimeType());
+               // values.put(MediaStore.Images.ImageColumns.ORIENTATION, galleryItem.getOrientation());
                 //values.put(MediaStore.Images.Media.DATE_ADDED, galleryItem.getCreatedTime());
                 getContentResolver().insert(
                         MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
@@ -227,7 +233,7 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
 
 
     private void delete(){
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
+     //   OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
         Call<ResponseBody> responseBodyCall = server.deleteFile(galleryItem.getId());
         responseBodyCall.enqueue(new Callback<ResponseBody>() {
             @Override

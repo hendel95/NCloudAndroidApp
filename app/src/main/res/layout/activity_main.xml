@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar"
@@ -13,9 +13,7 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_scrollFlags="scroll|enterAlways"
-        tools:layout_editor_absoluteX="0dp" />
+        app:layout_scrollFlags="scroll|enterAlways" />
 
     <android.support.design.widget.TabLayout
         android:id="@+id/tabLayout"
@@ -23,52 +21,101 @@
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
         android:minHeight="?attr/actionBarSize"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar"
-        app:tabGravity="fill"
-        app:tabMode="fixed"
-        tools:layout_editor_absoluteX="0dp" />
+        app:tabGravity="fill" />
 
 
-    <android.support.v4.view.ViewPager
+   <!-- <com.example.user.ncloudandroidapp.CustomViewPager
         android:id="@+id/pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="104dp"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        app:layout_constraintTop_toBottomOf="@+id/tabLayout"
-        tools:layout_editor_absoluteX="16dp" />
-
-
-    <!--<LinearLayout
-        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/black"
-        android:orientation="horizontal"
-        android:layout_weight="0">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior" />-->
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:text="This is text1"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/white"
-            android:text="This is text2"/>
-    </LinearLayout>-->
-
-    <android.support.design.widget.BottomNavigationView
-        android:id="@+id/bottom_nav"
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:background="@android:color/black"
-        app:menu="@menu/menu_navigation"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:itemIconTint="@android:color/white"
-        tools:layout_editor_absoluteX="0dp">
+        android:layout_height="match_parent">
 
-    </android.support.design.widget.BottomNavigationView>
-</android.support.constraint.ConstraintLayout>
+        <com.example.user.ncloudandroidapp.CustomViewPager
+            android:id="@+id/pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/bottom_nav_gdrive"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:visibility="gone"
+            android:background="@android:color/black"
+            >
+
+            <ImageButton
+                android:id="@+id/nav_download_gdrive"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_marginLeft="96dp"
+                android:layout_marginStart="96dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_action_download"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
+
+            <ImageButton
+                android:id="@+id/nav_delete_gdrive"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="96dp"
+                android:layout_marginRight="96dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_action_trash_light"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
+        </android.support.constraint.ConstraintLayout>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/bottom_nav_local"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:layout_alignParentBottom="true"
+            android:background="@android:color/black">
+
+            <ImageButton
+                android:id="@+id/nav_upload_local"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_marginLeft="96dp"
+                android:layout_marginStart="96dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_action_upload"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
+
+            <ImageButton
+                android:id="@+id/nav_delete_local"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="8dp"
+                android:layout_marginEnd="96dp"
+                android:layout_marginRight="96dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/ic_action_trash_light"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_bias="0.0" />
+        </android.support.constraint.ConstraintLayout>
+
+
+    </RelativeLayout>
+</LinearLayout>

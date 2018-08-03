@@ -26,6 +26,9 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     private String thumbnailPath;
     @SerializedName("mimeType")
     private String mimeType;
+    @SerializedName("orientation")
+    private String orientation;
+
     private boolean isChecked;
 
     public LocalGalleryItem(){

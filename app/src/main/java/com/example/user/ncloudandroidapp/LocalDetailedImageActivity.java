@@ -58,7 +58,6 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
     Toolbar mToolbar;
 
 
-
     LocalGalleryItem localGalleryItem;
 
     @Override
@@ -77,7 +76,6 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
         getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_back);
 
         mToolbar.bringToFront();
-
         localGalleryItem = getIntent().getParcelableExtra(EXTRA_LOCAL_PHOTO);
 
         Glide.with(this)
@@ -140,7 +138,7 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
 
             file.delete();
            // deleteFileFromMediaStore(getApplicationContext().getContentResolver(), file);
-            getApplicationContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + localGalleryItem.getPath() )));
+            getApplicationContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file) ));
 
         }
 
