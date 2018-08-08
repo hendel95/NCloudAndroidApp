@@ -1,12 +1,15 @@
 package com.example.user.ncloudandroidapp;
 
 import android.content.ContentResolver;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -16,26 +19,43 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.user.ncloudandroidapp.Adapter.GDriveRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Adapter.LocalRecyclerViewAdapter;
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
+import okhttp3.internal.http.HttpHeaders;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.http.Header;
 
 
 /**
@@ -46,11 +66,19 @@ import butterknife.ButterKnife;
  * Use the {@link LocalGalleryFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItemClickListener , SwipeRefreshLayout.OnRefreshListener{
+public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+
+    public static final int CHUNK_LIMIT = 262144; // = (256*1024)
+
+    public static final int OK          = 200;
+    public static final int CREATED     = 201;
+    public static final int INCOMPLETE  = 308;
+
+
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -66,6 +94,7 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
 
     LocalRecyclerViewAdapter mLocalRecyclerViewAdapter;
     protected GridLayoutManager gridLayoutManager;
+    OAuthServerIntf server;
 
     private int PICK_IMAGE_REQUEST = 1;
     private String TAG = "LocalGalleryFragment";
@@ -74,6 +103,9 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
     private Date compareDate = new Date();
     private Date date = new Date();
    // public static List<Item> sItemList = new ArrayList<>();
+
+    LocalGalleryItem mItem;
+    String fileLength;
 
     private static final int REQUEST_PERMISSIONS = 100;
     CustomDateFormat dateFormat = new CustomDateFormat();
@@ -116,40 +148,17 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         View view = inflater.inflate(R.layout.fragment_local_gallery, container, false);
         ButterKnife.bind(this, view);
 
-        // Get the ActionBar here to configure the way it behaves.
-        // actionBar = getSupportActionBar();
-       // actionBar.setDisplayShowCustomEnabled(true); //커스터마이징 하기 위해 필요
-       // actionBar.setDisplayShowTitleEnabled(true);
-
-
-
-      //  getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-      //  getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_menu_dark);
-
-       // Toolbar toolbar_local= (Toolbar) getActivity().findViewById(R.id.toolbar);
-        //toolbar.inflateMenu(R.menu.menu_main);
-        //toolbar.setOnMenuItemClickListener(this);
-       // setHasOptionsMenu(true);
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
         gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
-/*
-        toolbar_local.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "Toolbar Clicked!!");
 
-                gridLayoutManager.scrollToPositionWithOffset(0, 0);
-            }
-        });
-*/
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
-        mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT);
+        mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT, false);
 
         mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
-
+        server = RetrofitBuilder.getOAuthClient(getActivity());
         permissionCheck();
 
         return view;
@@ -177,7 +186,7 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
                 //mLocalRecyclerViewAdapter.clear();
                 mLocalRecyclerViewAdapter.notifyDataSetChanged();
                 permissionCheck();
-
+                mLocalRecyclerViewAdapter.clearStateArray();
                 //  getImagePath();
                 //mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
                 mSwipeRefreshLayout.setRefreshing(false);
@@ -223,17 +232,17 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
         mSwipeRefreshLayout.setOnRefreshListener(listener);
     }
 
-    @Override
-    public boolean onMenuItemClick(MenuItem menuItem) {
-        switch (menuItem.getItemId()) {
-            case R.id.action_settings:
-                Toast.makeText(getActivity(), "사진 선택", Toast.LENGTH_LONG).show();
-
-                return true;
-        }
-        return false;
+    public void refresh(){
+        mLocalRecyclerViewAdapter.notifyDataSetChanged();
     }
 
+    public void clearCheckBoxes(){
+        mLocalRecyclerViewAdapter.clearStateArray();
+    }
+
+    public void changeMode(boolean mode){
+        mLocalRecyclerViewAdapter.setModeChanged(mode);
+    }
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -370,5 +379,182 @@ public class LocalGalleryFragment extends Fragment implements Toolbar.OnMenuItem
             return uriToThumbnail(imageId);
         }
     }
+
+    public void moveToTopOfThePage(){
+        gridLayoutManager.scrollToPositionWithOffset(0, 0);
+    }
+
+
+    protected void deleteItems() {
+
+        HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
+        String checkedItemId;
+
+        Iterator<Integer> iterator = itemStates.keySet().iterator();
+        LocalGalleryItem item;
+
+        while(iterator.hasNext()){
+            int key = iterator.next();
+            item = ((LocalGalleryItem)mLocalRecyclerViewAdapter.getItem(key));
+
+           // String file_path = Environment.getExternalStorageDirectory() + File.separator + item.getName();
+            File file = new File(item.getPath());
+            Log.i(TAG, file.getAbsolutePath());
+
+            if(file.exists()){
+
+                file.delete();
+                getActivity().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file) ));
+
+            }
+
+        }
+
+    }
+
+/*
+    protected void resumableUpload(){
+
+        HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
+
+        Iterator<Integer> iterator = itemStates.keySet().iterator();
+
+        //LocalGalleryItem item;
+
+        int key;
+        while (iterator.hasNext()) {
+            key = iterator.next();
+            mItem = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
+
+            File file = new File(mItem.getPath());
+
+            Log.i(TAG + "FILE LENGTH", Long.toString(file.length()));
+           // MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
+
+            //MultipartBody.Part metaPart = MultipartBody.Part.create(RequestBody.create(contentType, content));
+            MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
+
+            String content = "{\"name\": \"" + file.getName() + "\"}";
+
+            RequestBody body = RequestBody.create(MediaType.parse(mItem.getMimeType()), content);
+
+            String contentLength = String.format(Locale.ENGLISH, "%d", content.getBytes().length);
+
+            fileLength = Long.toString(file.length());
+
+            Call<ResponseBody> call = server.resumableUpload(mItem.getMimeType(),fileLength, "application/json; charset=UTF-8" ,contentLength ,body);
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+
+                    if(response.code() == OK || response.code() == CREATED) {
+                        Log.i("CALL" + TAG , call.request().toString());
+                        Toast.makeText(getContext(), "Resumable uploading successful!", Toast.LENGTH_SHORT).show();
+
+                        Log.i(TAG, response.toString());
+                        Log.i(TAG, response.headers().toString());
+                        String sessionUri = response.headers().get("x-guploader-uploadid");
+                        putSessionUri(sessionUri, response.headers().get("content-length"));
+                    }
+
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                }
+            });
+
+        }
+    }
+
+
+    protected void putSessionUri(String sessionUri,  String content_length){
+
+        Call<ResponseBody> call = server.sendSessionUri(sessionUri,"image/jpeg", fileLength );
+        call.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Log.i(TAG, response.toString());
+                Log.i(TAG, call.request().toString());
+
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+            }
+        });
+    }
+
+*/
+    protected void multipleFilesUpload() {
+
+        List<MultipartBody.Part> parts = new ArrayList<>();
+
+        HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
+
+        Iterator<Integer> iterator = itemStates.keySet().iterator();
+        LocalGalleryItem item;
+        int key;
+
+
+        while (iterator.hasNext()) {
+            key = iterator.next();
+            item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
+
+            File file = new File(item.getPath());
+            
+            MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
+            String content = "{\"name\": \"" + file.getName() + "\"}";
+            MultipartBody.Part metaPart = MultipartBody.Part.create(RequestBody.create(contentType, content));
+            //parts.add(metaPart);
+            MultipartBody.Part mediaPart = MultipartBody.Part.create(RequestBody.create(MediaType.parse(item.getMimeType()), file));
+
+
+            Call<ResponseBody> call = server.uploadFile(metaPart, mediaPart);
+            call.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    Toast.makeText(getContext(), "uploading successfully", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+
+                }
+            });
+        }
+
+
+    }
+
+/*
+
+    @NonNull
+    private RequestBody createPartFromString(String descriptionString) {
+        return RequestBody.create(
+                okhttp3.MultipartBody.FORM, descriptionString);
+    }
+
+    @NonNull
+    private MultipartBody.Part prepareFilePart(String partName, Uri fileUri) {
+        // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
+        // use the FileUtils to get the actual file by uri
+        File file = FileUtils.getFile(this, fileUri);
+
+        // create RequestBody instance from file
+        RequestBody requestFile =
+                RequestBody.create(
+                        MediaType.parse(getContentResolver().getType(fileUri)),
+                        file
+                );
+
+        // MultipartBody.Part is used to send also the actual file name
+        return MultipartBody.Part.createFormData(partName, file.getName(), requestFile);
+    }
+
+*/
+
 
 }

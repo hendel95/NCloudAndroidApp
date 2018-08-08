@@ -7,12 +7,14 @@ import android.net.Uri;
 import android.opengl.Visibility;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,6 +29,7 @@ import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.user.ncloudandroidapp.Adapter.GDriveRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.github.chrisbanes.photoview.PhotoView;
@@ -35,6 +38,8 @@ import org.w3c.dom.Text;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindInt;
 import butterknife.BindView;
@@ -42,6 +47,7 @@ import butterknife.ButterKnife;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -50,13 +56,13 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
 
     public static final String EXTRA_LOCAL_PHOTO = "LocalDetailedImageActivity";
     public static final String TAG = "LocalDetailedImageActivity";
+    OAuthServerIntf server;
 
     @BindView(R.id.local_detailed_photo)
     PhotoView mPhotoView;
 
     @BindView(R.id.toolbar_detailed_local)
     Toolbar mToolbar;
-
 
     LocalGalleryItem localGalleryItem;
 
@@ -67,6 +73,7 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         setSupportActionBar(mToolbar);
+        server = RetrofitBuilder.getOAuthClient(getApplication());
 
         // Get the ActionBar here to configure the way it behaves.
         ActionBar actionBar = getSupportActionBar();
@@ -130,65 +137,48 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
     }
 
     private void delete(){
-        String file_path = Environment.getExternalStorageDirectory() + File.separator + localGalleryItem.getName();
+        //String file_path = Environment.getExternalStorageDirectory() + File.separator + localGalleryItem.getName();
         File file = new File(localGalleryItem.getPath());
         Log.i(TAG, file.getAbsolutePath());
 
         if(file.exists()){
 
             file.delete();
-           // deleteFileFromMediaStore(getApplicationContext().getContentResolver(), file);
             getApplicationContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file) ));
 
         }
 
     }
-    public static void deleteFileFromMediaStore(
-            final ContentResolver contentResolver, final File file) {
-        String canonicalPath;
-        try {
-            canonicalPath = file.getCanonicalPath();
-        } catch (IOException e) {
-            canonicalPath = file.getAbsolutePath();
-        }
-        final Uri uri = MediaStore.Files.getContentUri("external");
-        final int result = contentResolver.delete(uri,
-                MediaStore.Files.FileColumns.DATA + "=?",
-                new String[] { canonicalPath });
-        if (result == 0) {
-            final String absolutePath = file.getAbsolutePath();
-            if (!absolutePath.equals(canonicalPath)) {
-                contentResolver.delete(uri, MediaStore.Files.FileColumns.DATA
-                        + "=?", new String[] { absolutePath });
-            }
-        }
 
-    }
     private void upload() {
 
         File file = new File(localGalleryItem.getPath());
 
         MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
         String content = "{\"name\": \"" + file.getName() + "\"}";
+
         MultipartBody.Part metaPart = MultipartBody.Part.create(RequestBody.create(contentType, content));
         String mineType = localGalleryItem.getMimeType();
         MultipartBody.Part mediaPart = MultipartBody.Part.create(RequestBody.create(MediaType.parse(mineType), file));
 
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
-        final Call<GalleryItem> galleryItemCall = server.uploadFile(metaPart, mediaPart);
-        galleryItemCall.enqueue(new Callback<GalleryItem>() {
+        //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
+        final Call<ResponseBody> galleryItemCall = server.uploadFile(metaPart, mediaPart);
+        galleryItemCall.enqueue(new Callback<ResponseBody>() {
             @Override
-            public void onResponse(Call<GalleryItem> call, Response<GalleryItem> response) {
-                Toast.makeText(LocalDetailedImageActivity.this, "uploading successful", Toast.LENGTH_SHORT).show();
+            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                Toast.makeText(LocalDetailedImageActivity.this, "uploading successfully", Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void onFailure(Call<GalleryItem> call, Throwable t) {
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
                 Toast.makeText(LocalDetailedImageActivity.this, "uploading failed", Toast.LENGTH_SHORT).show();
 
             }
         });
     }
+
+
+
 
 }
 

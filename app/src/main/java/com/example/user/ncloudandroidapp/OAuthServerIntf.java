@@ -3,17 +3,25 @@ package com.example.user.ncloudandroidapp;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 
+import java.util.List;
+
+import okhttp3.MediaType;
 import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
+import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.Headers;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
+import retrofit2.http.PUT;
 import retrofit2.http.Part;
+import retrofit2.http.PartMap;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.Streaming;
@@ -51,11 +59,36 @@ public interface OAuthServerIntf {
 
 
 
+
+    /*Multipart Upload*/
     @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
-    Call<GalleryItem> uploadFile(
+    Call<ResponseBody> uploadFile(
             @Part MultipartBody.Part metaPart,
             @Part MultipartBody.Part mediaPart
+    );
+
+    /*Resumable Upload*/
+    @POST("upload/drive/v3/files?uploadType=resumable")
+    Call<ResponseBody> resumableUpload(
+            @Header("X-Upload-Content-Type") String x_upload_content_type,
+            @Header("X-Upload-Content-Length") String x_upload_content_length,
+            @Header("Content-Type") String content_type,
+            @Header("Content-Length") String content_length,
+            @Body RequestBody requestBody
+    );
+
+    @PUT("upload/drive/v3/files?uploadType=resumable")
+    Call<ResponseBody> sendSessionUri(
+            @Query("upload_id") String upload_id,
+            @Header("Content-Type") String content_type,
+            @Header("Content-Length") String content_length
+    );
+
+
+    @POST("upload/drive/v3/files?uploadType=multipart")
+    Call<ResponseBody> uploadMultipleFilesDynamic(
+            @Part List<MultipartBody.Part> files
     );
 
     @Streaming
@@ -66,7 +99,7 @@ public interface OAuthServerIntf {
 
     @DELETE("drive/v3/files/{fileId}")
     Call<ResponseBody> deleteFile(
-        @Path("fileId") String fileId
+            @Path("fileId") String fileId
     );
 
     @GET("drive/v3/files")

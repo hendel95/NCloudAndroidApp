@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,23 +31,30 @@ import com.example.user.ncloudandroidapp.R;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final String TAG = "LocalRecyclerViewAdapter";
     private List<Item> mItemList;
     private int mDefaultSpanCount;
+    private boolean isModeChanged;
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_ITEM = 1;
 
     Context mContext;
 
-    public LocalRecyclerViewAdapter(Context context, GridLayoutManager gridLayoutManager, int defaultSpanCount) {
+   // private SparseBooleanArray itemStateArray = new SparseBooleanArray();
+    private HashMap<Integer, Boolean> itemCheckedStates = new HashMap<>();
+
+
+    public LocalRecyclerViewAdapter(Context context, GridLayoutManager gridLayoutManager, int defaultSpanCount, boolean isModeChanged) {
         this.mContext = context;
         mItemList = new ArrayList<>();
         mDefaultSpanCount = defaultSpanCount;
-
+        this.isModeChanged = isModeChanged;
         gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
             @Override
             public int getSpanSize(int position) {
@@ -93,22 +101,32 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             Log.i("URI=>", ((LocalGalleryItem) item).getPath());
 
             CheckBox checkBox = ((LocalRecyclerViewAdapter.ItemViewHolder) holder).mCheckBox;
-            checkBox.setOnCheckedChangeListener(null);
-            checkBox.setChecked(((LocalGalleryItem) item).isChecked());
-            checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    ((LocalGalleryItem) item).setChecked(isChecked);
-                }
-            });
+
+            if(itemCheckedStates.get(position) != null){
+                checkBox.setChecked(true);
+            }else{
+                checkBox.setChecked(false);
+            }
+
+            if(isModeChanged){
+                checkBox.setVisibility(View.VISIBLE);
+            }
+            else{
+                checkBox.setVisibility(View.GONE);
+            }
 
             Glide.with(mContext)
                     .load(((LocalGalleryItem) item).getPath())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
 
+
         }
 
+    }
+
+    public void setModeChanged(boolean modeChanged){
+        this.isModeChanged = modeChanged;
     }
 
     public Item getItem(int position) {
@@ -147,17 +165,34 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             mCheckBox = (CheckBox) itemView.findViewById(R.id.check_box);
 
             itemView.setOnClickListener(this);
+
+            mCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    int adapterPosition = getAdapterPosition();
+                    if(isChecked == true) {
+                        itemCheckedStates.put(adapterPosition, isChecked);
+                    }else{
+                        itemCheckedStates.remove(adapterPosition);
+                    }
+                }
+            });
         }
 
         @Override
         public void onClick(View view) {
             int position = getAdapterPosition();
             if (position != RecyclerView.NO_POSITION) {
-                LocalGalleryItem localGalleryItem = (LocalGalleryItem) mItemList.get(position);
-                Intent intent = new Intent(mContext, LocalDetailedImageActivity.class);
-                intent.putExtra("class", TAG);
-                intent.putExtra(LocalDetailedImageActivity.EXTRA_LOCAL_PHOTO, localGalleryItem);
-                view.getContext().startActivity(intent);
+                if(isModeChanged){
+                    int adapterPosition = getAdapterPosition();
+                    itemCheckedStates.put(adapterPosition, true);
+                }else {
+                    LocalGalleryItem localGalleryItem = (LocalGalleryItem) mItemList.get(position);
+                    Intent intent = new Intent(mContext, LocalDetailedImageActivity.class);
+                    intent.putExtra("class", TAG);
+                    intent.putExtra(LocalDetailedImageActivity.EXTRA_LOCAL_PHOTO, localGalleryItem);
+                    view.getContext().startActivity(intent);
+                }
             }
         }
 
@@ -196,6 +231,13 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         }
     }
 
+    public HashMap<Integer, Boolean> getItemStateArray() {
+        return itemCheckedStates;
+    }
+
+    public void clearStateArray(){
+        itemCheckedStates.clear();
+    }
 
     public int exifOrientationToDegrees(int exifOrientation) {
         if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {

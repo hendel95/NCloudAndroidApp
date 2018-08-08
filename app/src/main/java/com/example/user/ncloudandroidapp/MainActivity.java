@@ -1,12 +1,14 @@
 package com.example.user.ncloudandroidapp;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.BottomNavigationView;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -25,13 +27,14 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Adapter.TabPagerAdapter;
+import com.example.user.ncloudandroidapp.Model.Item;
 import com.google.android.gms.vision.text.Line;
 
 import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     private static final String TAG = "MainActivity";
     private TabPagerAdapter pagerAdapter;
     private static final int GDRIVE = 0;
@@ -39,33 +42,29 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @BindView(R.id.tabLayout)
     TabLayout mTabLayout;
-
     @BindView(R.id.toolbar)
-     Toolbar mToolbar;
-
+    Toolbar mToolbar;
     @BindView(R.id.pager)
     CustomViewPager mViewPager;
-
     @BindView(R.id.bottom_nav_gdrive)
     ConstraintLayout mConstraintLayoutGDrive;
-
     @BindView(R.id.bottom_nav_local)
     ConstraintLayout mConstraintLayoutLocal;
-
     @BindView(R.id.nav_upload_local)
     ImageButton mUploadLocal;
-
     @BindView(R.id.nav_delete_local)
     ImageButton mDeleteLocal;
-
     @BindView(R.id.nav_download_gdrive)
     ImageButton mDownloadGDrive;
-
     @BindView(R.id.nav_delete_gdrive)
     ImageButton mDeleteGDrive;
+    @BindView(R.id.multiple_selection_bar)
+    ConstraintLayout mMultipleSelection;
+    @BindView(R.id.cancel_button)
+    ImageButton mCancelButton;
 
-  //  @BindView(R.id.check_box)
- //   CheckBox mCheckBox;
+    // @BindView(R.id.check_box)
+    // CheckBox mCheckBox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowCustomEnabled(true); //커스터마이징 하기 위해 필요
         actionBar.setDisplayShowTitleEnabled(true);
+        setTitle("WM Gallery APP");
 
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mConstraintLayoutGDrive.bringToFront();
         mConstraintLayoutLocal.bringToFront();
 
+        mToolbar.setOnClickListener(this);
 
         // Creating TabPagerAdapter adapter
         pagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), mTabLayout.getTabCount());
@@ -120,8 +121,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mDeleteLocal.setOnClickListener(this);
         mDownloadGDrive.setOnClickListener(this);
         mDeleteGDrive.setOnClickListener(this);
+        mCancelButton.setOnClickListener(this);
 
     }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         //return super.onCreateOptionsMenu(menu);
@@ -131,57 +134,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
 
-
     @Override
-    public boolean onOptionsItemSelected(MenuItem item){
+    public boolean onOptionsItemSelected(MenuItem item) {
 
         switch (item.getItemId()) {
             case R.id.action_choose:
-                // User chose the "Settings" item, show the app settings UI...
-                //  mCheckBox.setVisibility(View.VISIBLE);
-                Toast.makeText(MainActivity.this, "사진 선택 버튼", Toast.LENGTH_LONG).show();
-                Log.i(TAG, "Checked!");
-
-                int position = mViewPager.getCurrentItem();
-                //Fragment fragment = pagerAdapter.getCount();
-                if(position == GDRIVE) {
-
-                    if (mConstraintLayoutGDrive.getVisibility() == View.GONE) {
-                        mConstraintLayoutGDrive.setVisibility(View.VISIBLE);
-                        mTabLayout.setVisibility(View.GONE);
-                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_clear_light);
-                        mViewPager.setSwipeLocked(true);
-                    } else {
-                        mConstraintLayoutGDrive.setVisibility(View.GONE);
-                        mTabLayout.setVisibility(View.VISIBLE);
-                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_menu_dark);
-                        mViewPager.setSwipeLocked(false);
-                    }
-
-
-                }
-                else if(position == LOCAL){
-                    if (mConstraintLayoutLocal.getVisibility() == View.GONE) {
-                        mConstraintLayoutLocal.setVisibility(View.VISIBLE);
-                        mTabLayout.setVisibility(View.GONE);
-                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_clear_light);
-                        mViewPager.setSwipeLocked(true);
-
-                    } else {
-                        mConstraintLayoutLocal.setVisibility(View.GONE);
-                        mTabLayout.setVisibility(View.VISIBLE);
-                        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_menu_dark);
-                        mViewPager.setSwipeLocked(false);
-                    }
-
-                }
-
-
+                setVisibility();
                 return true;
-
             default:
-                // If we got here, the user's action was not recognized.
-                // Invoke the superclass to handle it.
                 Toast.makeText(getApplicationContext(), "정렬 버튼", Toast.LENGTH_LONG).show();
                 return super.onOptionsItemSelected(item);
         }
@@ -190,40 +150,227 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+
+        switch (v.getId()) {
+
             case R.id.nav_delete_local:
-                Toast.makeText(getApplicationContext(), "DELETE", Toast.LENGTH_LONG).show();
+                //Toast.makeText(MainActivity.this, "DELETE", Toast.LENGTH_LONG).show();
+                dialogBuilderDeleteFiles();
 
                 break;
 
             case R.id.nav_upload_local:
-                    Toast.makeText(getApplicationContext(), "UPLOAD", Toast.LENGTH_LONG).show();
-
-                    break;
+                Toast.makeText(MainActivity.this, "UPLOAD", Toast.LENGTH_LONG).show();
+                dialogBuilderUploadFiles();
+                break;
 
             case R.id.nav_delete_gdrive:
-                Toast.makeText(getApplicationContext(), "DELETE", Toast.LENGTH_LONG).show();
+                //Toast.makeText(MainActivity.this, "DELETE", Toast.LENGTH_LONG).show();
+                dialogBuilderDeleteFiles();
+
 
                 break;
 
             case R.id.nav_download_gdrive:
-                Toast.makeText(getApplicationContext(), "DOWNLOAD", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, "DOWNLOAD", Toast.LENGTH_LONG).show();
+                dialogBuilderDownloadFiles();
+                break;
+
+            case R.id.cancel_button:
+                setVisibility();
 
                 break;
-                /*
+
             case R.id.toolbar:
                 int position = mTabLayout.getSelectedTabPosition();
-                if(position == GDRIVE){
-                    GDriveGalleryFragment gDriveGalleryFragment = new GDriveGalleryFragment();
-                    gDriveGalleryFragment.gridLayoutManager.scrollToPositionWithOffset(0, 0);
-                }
-                else if(position == LOCAL){
-                    LocalGalleryFragment localGalleryFragment = new LocalGalleryFragment();
-                    localGalleryFragment.gridLayoutManager.scrollToPositionWithOffset(0, 0);
+                Fragment fragment = pagerAdapter.getItem(position);
+
+                if (position == GDRIVE) {
+                    //Fragment fragment = pagerAdapter.getItem(position);
+
+                    GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) fragment);
+                    gDriveGalleryFragment.moveToTopOfThePage();
+
+                } else if (position == LOCAL) {
+                    //Fragment fragment = pagerAdapter.getItem(position);
+
+                    LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) fragment);
+                    localGalleryFragment.moveToTopOfThePage();
+
                 }
 
-                break;*/
+                break;
         }
     }
+
+
+    private void setVisibility() {
+        int position = mTabLayout.getSelectedTabPosition();
+
+        if (position == LOCAL) {
+
+            Fragment localFragment = pagerAdapter.getItem(position);
+            LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+
+            if (mToolbar.getVisibility() == View.VISIBLE) {
+                mConstraintLayoutLocal.setVisibility(View.VISIBLE);
+                mTabLayout.setVisibility(View.GONE);
+                mViewPager.setSwipeLocked(true);
+                mMultipleSelection.setVisibility(View.VISIBLE);
+                mToolbar.setVisibility(View.GONE);
+                setTitle("내 사진첩");
+                localGalleryFragment.changeMode(true);
+                localGalleryFragment.refresh();
+                localGalleryFragment.clearCheckBoxes();
+            } else {
+                mConstraintLayoutLocal.setVisibility(View.GONE);
+                mTabLayout.setVisibility(View.VISIBLE);
+                mViewPager.setSwipeLocked(false);
+                mMultipleSelection.setVisibility(View.GONE);
+                mToolbar.setVisibility(View.VISIBLE);
+                setTitle("WM Gallery APP");
+                localGalleryFragment.changeMode(false);
+                localGalleryFragment.refresh();
+                localGalleryFragment.clearCheckBoxes();
+            }
+        } else if (position == GDRIVE) {
+
+            Fragment gdriveFragment = pagerAdapter.getItem(position);
+            GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+            gDriveGalleryFragment.deleteItems();
+
+            if (mToolbar.getVisibility() == View.VISIBLE) {
+                mConstraintLayoutGDrive.setVisibility(View.VISIBLE);
+                mTabLayout.setVisibility(View.GONE);
+                mViewPager.setSwipeLocked(true);
+                mMultipleSelection.setVisibility(View.VISIBLE);
+                mToolbar.setVisibility(View.GONE);
+                setTitle("구글 드라이브");
+                gDriveGalleryFragment.changeMode(true);
+                gDriveGalleryFragment.refresh();
+                gDriveGalleryFragment.clearCheckBoxes();
+            } else {
+                mConstraintLayoutGDrive.setVisibility(View.GONE);
+                mTabLayout.setVisibility(View.VISIBLE);
+                mViewPager.setSwipeLocked(false);
+                mMultipleSelection.setVisibility(View.GONE);
+                mToolbar.setVisibility(View.VISIBLE);
+                setTitle("WM Gallery APP");
+                gDriveGalleryFragment.changeMode(false);
+                gDriveGalleryFragment.refresh();
+                gDriveGalleryFragment.clearCheckBoxes();
+            }
+        }
+
+    }
+
+    private void dialogBuilderDeleteFiles(){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("삭제하기");
+        builder.setMessage("사진을 삭제 하시겠습니까?");
+        builder.setPositiveButton(R.string.ok_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                int position = mTabLayout.getSelectedTabPosition();
+
+                if(position == GDRIVE) {
+                    Fragment gdriveFragment = pagerAdapter.getItem(position);
+                    GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+                    gDriveGalleryFragment.deleteItems();
+                    gDriveGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 삭제를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                }
+                else if(position == LOCAL){
+                    Fragment localFragment = pagerAdapter.getItem(position);
+                    LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+                    localGalleryFragment.deleteItems();
+                    localGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 삭제를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                }
+            }
+        });
+
+        builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+
+        builder.show();
+
+    }
+
+    private void dialogBuilderUploadFiles(){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("업로드");
+        builder.setMessage("사진을 업로드 하시겠습니까?");
+        builder.setPositiveButton(R.string.ok_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                int position = mTabLayout.getSelectedTabPosition();
+
+               if(position == LOCAL){
+                    Fragment localFragment = pagerAdapter.getItem(position);
+                    LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+                    //localGalleryFragment.resumableUpload();
+                    localGalleryFragment.multipleFilesUpload();
+                    localGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 업로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                }
+            }
+        });
+
+        builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+
+        builder.show();
+
+    }
+
+    private void dialogBuilderDownloadFiles(){
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("다운로드");
+        builder.setMessage("사진을 다운로드 하시겠습니까?");
+        builder.setPositiveButton(R.string.ok_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                int position = mTabLayout.getSelectedTabPosition();
+
+                if(position == GDRIVE) {
+                    Fragment gdriveFragment = pagerAdapter.getItem(position);
+                    GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+                    gDriveGalleryFragment.downloadMultipleFiles();
+                    gDriveGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 다운로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                }
+
+            }
+        });
+
+        builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+            }
+        });
+
+        builder.show();
+
+    }
+
+
+
 }
 

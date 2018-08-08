@@ -29,7 +29,7 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     @SerializedName("orientation")
     private String orientation;
 
-    private boolean isChecked;
+    //private boolean isChecked;
 
     public LocalGalleryItem(){
 

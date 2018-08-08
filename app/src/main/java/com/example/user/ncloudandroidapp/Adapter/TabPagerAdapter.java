@@ -12,6 +12,9 @@ public class TabPagerAdapter extends FragmentStatePagerAdapter {
 
     // Count number of tabs
     private int tabCount;
+    private static GDriveGalleryFragment gDriveGalleryFragment = new GDriveGalleryFragment();
+    private static LocalGalleryFragment localGalleryFragment = new LocalGalleryFragment();
+
 
     public TabPagerAdapter(FragmentManager fm, int tabCount) {
         super(fm);
@@ -24,10 +27,10 @@ public class TabPagerAdapter extends FragmentStatePagerAdapter {
         // Returning the current tabs
         switch (position) {
             case 0:
-                GDriveGalleryFragment gDriveGalleryFragment = new GDriveGalleryFragment();
+                //GDriveGalleryFragment gDriveGalleryFragment = new GDriveGalleryFragment();
                 return gDriveGalleryFragment;
             case 1:
-                LocalGalleryFragment localGalleryFragment = new LocalGalleryFragment();
+                //LocalGalleryFragment localGalleryFragment = new LocalGalleryFragment();
                 return localGalleryFragment;
 
 

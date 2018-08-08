@@ -1,14 +1,18 @@
 package com.example.user.ncloudandroidapp;
 
+import android.content.ContentValues;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
+import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,11 +28,19 @@ import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -42,7 +54,7 @@ import retrofit2.Response;
  * Use the {@link GDriveGalleryFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuItemClickListener , SwipeRefreshLayout.OnRefreshListener {
+public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -65,6 +77,10 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
     private CustomDateFormat mCustomDateFormat = new CustomDateFormat();
     protected GridLayoutManager gridLayoutManager;
 
+    private GalleryItem mGalleryItem;
+
+    private static OAuthServerIntf server;
+
     private String currentDate;
 
     private boolean isLastPage = false;
@@ -83,7 +99,6 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
     public GDriveGalleryFragment() {
         // Required empty public constructor
     }
-
 
 
     /**
@@ -121,45 +136,30 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
-       // setHasOptionsMenu(true);
 
-       // Toolbar toolbar_drive= (Toolbar) getActivity().findViewById(R.id.toolbar);
-        //toolbar.inflateMenu(R.menu.menu_main);
-
-       // setHasOptionsMenu(true);
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
+        server = RetrofitBuilder.getOAuthClient(getActivity());
 
         gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
-
-        //toolbar.setOnMenuItemClickListener(this);
-/*
-        toolbar_drive.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, "Toolbar Clicked!!");
-                gridLayoutManager.scrollToPositionWithOffset(0, 0);
-            }
-        });*/
-
 
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
         mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
 
-        mAdapter = new GDriveRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT);
+        mAdapter = new GDriveRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT, false);
         mRecyclerView.setAdapter(mAdapter);
 
         startList();
         // Inflate the layout for this fragment
 
-       return view;
+        return view;
     }
 
-    private void startList(){
+    private void startList() {
         PAGE_TOKEN = null;
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getActivity());
+        //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getActivity());
         Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER, PAGE_SIZE, PAGE_TOKEN);
         galleryItemCall.enqueue(findFirstImagesCallback);
     }
@@ -168,35 +168,17 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
         mSwipeRefreshLayout.setOnRefreshListener(listener);
     }
 
-/*
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.menu_main, menu);
-        super.onCreateOptionsMenu(menu, inflater);
-    }
-
-*/
-    @Override
-    public boolean onMenuItemClick(MenuItem menuItem) {
-        switch (menuItem.getItemId()) {
-            case R.id.action_settings:
-                Toast.makeText(getActivity(), "사진 선택", Toast.LENGTH_LONG).show();
-
-                return true;
-        }
-        return false;
-    }
-
 
     @Override
     public void onRefresh() {
         mSwipeRefreshLayout.setRefreshing(true);
 
-       new Handler().postDelayed(new Runnable() {
+        new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 mAdapter.clear();
                 mAdapter.notifyDataSetChanged();
+                mAdapter.clearStateArray();
                 startList();
                 //mRecyclerView.setAdapter(mAdapter);
                 mSwipeRefreshLayout.setRefreshing(false);
@@ -238,18 +220,13 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
                         currentDate = items.get(0).getCreatedTime();
                         mAdapter.add(new HeaderItem(mCustomDateFormat.dateFormatting(currentDate, Item.HEADER_ITEM_TYPE)));
                         configViews(items);
-                    }else{
-                        mTextView.setText(R.string.empty_file);
-                        mTextView.bringToFront();
                     }
                     if (items.size() >= PAGE_SIZE) {
                         mAdapter.addFooter();
                     } else {
                         isLastPage = true;
                     }
-                }else{
-                    mTextView.setText(R.string.empty_file);
-                    mTextView.bringToFront();
+
                 }
 
             } else if (response.code() == 400) {
@@ -260,9 +237,9 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
             } else if (response.code() == 404) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
-            }else if (response.code() == 504) {
+            } else if (response.code() == 504) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_504), Toast.LENGTH_SHORT).show();
-            }else if(response.code() == 200 && galleryItems == null){
+            } else if (response.code() == 200 && galleryItems == null) {
                 mTextView.setText(R.string.empty_file);
                 mTextView.bringToFront();
             }
@@ -364,12 +341,174 @@ public class GDriveGalleryFragment extends Fragment implements Toolbar.OnMenuIte
         }
     };
 
+    public void changeMode(boolean mode){
+        mAdapter.setModeChanged(mode);
+    }
+
+    public void clearCheckBoxes(){
+        mAdapter.clearStateArray();
+    }
+
+    public void refresh(){
+        mAdapter.notifyDataSetChanged();
+    }
 
     protected void loadMoreItems() {
         isLoading = true;
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getActivity());
+        //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getActivity());
         Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER, PAGE_SIZE, PAGE_TOKEN);
         galleryItemCall.enqueue(findNextImagesCallback);
+    }
+
+    public void moveToTopOfThePage() {
+        gridLayoutManager.scrollToPositionWithOffset(0, 0);
+    }
+
+    public void downloadMultipleFiles(){
+        HashMap<Integer, Boolean> itemStates = mAdapter.getItemStateArray();
+
+        Iterator<Integer> iterator = itemStates.keySet().iterator();
+        while(iterator.hasNext()){
+
+            int key = iterator.next();
+            mGalleryItem = ((GalleryItem)mAdapter.getItem(key));
+            Call<ResponseBody> responseBodyCall = server.downloadFile(mGalleryItem.getId());
+            responseBodyCall.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
+                    if (response.code() == 200 && response.body() != null) {
+                        Log.d(TAG, "server contacted and has file");
+
+                        new AsyncTask<Void, Void, Void>(){
+                            @Override
+                            protected Void doInBackground(Void... voids){
+                                boolean writtenToDisk = writeResponseBodyToDisk(response.body());
+
+                                Log.d(TAG, "file download was a success? " + writtenToDisk);
+                                return null;
+                            }
+                        }.execute();
+
+
+                        //response.body()
+                    } else {
+                        Log.d(TAG, "server contact failed");
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    Log.e(TAG, "error");
+                }
+            });
+
+        }
+    }
+
+    private boolean writeResponseBodyToDisk(ResponseBody body) {
+
+        try {
+            //새로운 Directory 생성
+            String file_url = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "GDRIVE" ;
+
+
+            File dir = new File(file_url);
+            //directory 없으면 생성
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String fileName = mGalleryItem.getName();
+            String localPath = file_url + File.separator + fileName;
+
+            //Local Path에 파일 생성
+
+            File downloadFile = new File(localPath);
+
+            InputStream inputStream = null;
+            OutputStream outputStream = null;
+
+            try {
+                byte[] fileReader = new byte[4096];
+
+                long fileSize = body.contentLength();
+                long fileSizeDownloaded = 0;
+
+                inputStream = body.byteStream();
+                outputStream = new FileOutputStream(downloadFile);
+
+                while (true) {
+                    int read = inputStream.read(fileReader);
+
+                    if (read == -1) {
+                        break;
+                    }
+
+                    outputStream.write(fileReader, 0, read);
+
+                    fileSizeDownloaded += read;
+
+                    Log.d(TAG, "file download: " + fileSizeDownloaded + " of " + fileSize);
+                }
+
+
+                ContentValues values = new ContentValues();
+                values.put(MediaStore.Images.Media.DATA,
+                        downloadFile.getAbsolutePath());
+                values.put(MediaStore.Images.Media.MIME_TYPE, mGalleryItem.getMimeType());
+                // values.put(MediaStore.Images.ImageColumns.ORIENTATION, galleryItem.getOrientation());
+                //values.put(MediaStore.Images.Media.DATE_ADDED, galleryItem.getCreatedTime());
+                getActivity().getContentResolver().insert(
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+                outputStream.flush();
+
+                return true;
+            } catch (IOException e) {
+                return false;
+            } finally {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+
+                if (outputStream != null) {
+                    outputStream.close();
+                }
+            }
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    protected void deleteItems() {
+
+        HashMap<Integer, Boolean> itemStates = mAdapter.getItemStateArray();
+        String checkedItemId;
+
+        Iterator<Integer> iterator = itemStates.keySet().iterator();
+
+        while(iterator.hasNext()){
+            int key = iterator.next();
+            checkedItemId = ((GalleryItem)mAdapter.getItem(key)).getId();
+
+            Call<ResponseBody> responseBodyCall = server.deleteFile(checkedItemId);
+            responseBodyCall.enqueue(new Callback<ResponseBody>() {
+                @Override
+                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                    if (response.code() == 204) {
+                        Log.i(TAG, "File deleted sucessfully!!");
+                    } else {
+                        Log.e(TAG, "error caused from deleting function");
+                    }
+                }
+
+                @Override
+                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                    Log.e(TAG, "error");
+                }
+            });
+        }
+
     }
 
 }
