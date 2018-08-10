@@ -31,8 +31,10 @@ public class LoginActivity extends AppCompatActivity {
 
     //private final String clientSecret = "your-client-secret";
     private static final String CODE = "code";
+
     private final String REDIRECT_URI = "com.example.user.ncloudandroidapp:/redirecturi";
     private static final String REDIRECT_URI_ROOT = "com.example.user.ncloudandroidapp";
+
     public static final String API_SCOPE = "https://www.googleapis.com/auth/drive";
 
     private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";

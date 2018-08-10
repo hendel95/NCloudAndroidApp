@@ -1,5 +1,6 @@
 package com.example.user.ncloudandroidapp;
 
+import android.app.DownloadManager;
 import android.content.ContentValues;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -7,6 +8,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
@@ -40,6 +42,7 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import lombok.NonNull;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -64,6 +67,8 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
     private String mParam1;
     private String mParam2;
 
+    public static final int OK          = 200;
+
 
     private static final String TAG = "GDriveGalleryFragment";
     private static final String FIELDS = "nextPageToken, files/id, files/name, files/mimeType, files/thumbnailLink, files/createdTime";
@@ -77,10 +82,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
     private CustomDateFormat mCustomDateFormat = new CustomDateFormat();
     protected GridLayoutManager gridLayoutManager;
 
-    private GalleryItem mGalleryItem;
-
     private static OAuthServerIntf server;
-
     private String currentDate;
 
     private boolean isLastPage = false;
@@ -364,48 +366,47 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
         gridLayoutManager.scrollToPositionWithOffset(0, 0);
     }
 
+
+
     public void downloadMultipleFiles(){
         HashMap<Integer, Boolean> itemStates = mAdapter.getItemStateArray();
 
         Iterator<Integer> iterator = itemStates.keySet().iterator();
+
         while(iterator.hasNext()){
 
+            final GalleryItem finalGalleryItem;
             int key = iterator.next();
-            mGalleryItem = ((GalleryItem)mAdapter.getItem(key));
-            Call<ResponseBody> responseBodyCall = server.downloadFile(mGalleryItem.getId());
+
+            finalGalleryItem = ((GalleryItem)mAdapter.getItem(key));
+            Call<ResponseBody> responseBodyCall = server.downloadFile(finalGalleryItem.getId());
+
             responseBodyCall.enqueue(new Callback<ResponseBody>() {
                 @Override
-                public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
-                    if (response.code() == 200 && response.body() != null) {
-                        Log.d(TAG, "server contacted and has file");
+                public void onResponse(@NonNull Call<ResponseBody> call, @NonNull final Response<ResponseBody> response) {
 
-                        new AsyncTask<Void, Void, Void>(){
+                    if(response.isSuccessful()) {
+                        new AsyncTask<Void, Void, Void>() {
                             @Override
-                            protected Void doInBackground(Void... voids){
-                                boolean writtenToDisk = writeResponseBodyToDisk(response.body());
-
-                                Log.d(TAG, "file download was a success? " + writtenToDisk);
+                            protected Void doInBackground(Void... voids) {
+                                boolean writtenToDisk = writeResponseBodyToDisk(response.body(), finalGalleryItem);
                                 return null;
                             }
                         }.execute();
-
-
-                        //response.body()
-                    } else {
-                        Log.d(TAG, "server contact failed");
                     }
+
                 }
 
                 @Override
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
-                    Log.e(TAG, "error");
+
                 }
             });
 
         }
     }
 
-    private boolean writeResponseBodyToDisk(ResponseBody body) {
+    private boolean writeResponseBodyToDisk(ResponseBody body, GalleryItem item) {
 
         try {
             //새로운 Directory 생성
@@ -418,7 +419,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
                 dir.mkdirs();
             }
 
-            String fileName = mGalleryItem.getName();
+            String fileName = item.getName();
             String localPath = file_url + File.separator + fileName;
 
             //Local Path에 파일 생성
@@ -455,7 +456,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Images.Media.DATA,
                         downloadFile.getAbsolutePath());
-                values.put(MediaStore.Images.Media.MIME_TYPE, mGalleryItem.getMimeType());
+                values.put(MediaStore.Images.Media.MIME_TYPE, item.getMimeType());
                 // values.put(MediaStore.Images.ImageColumns.ORIENTATION, galleryItem.getOrientation());
                 //values.put(MediaStore.Images.Media.DATE_ADDED, galleryItem.getCreatedTime());
                 getActivity().getContentResolver().insert(
@@ -510,5 +511,6 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
         }
 
     }
+
 
 }

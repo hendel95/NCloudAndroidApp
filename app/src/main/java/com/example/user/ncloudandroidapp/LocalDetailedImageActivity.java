@@ -162,7 +162,7 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
         MultipartBody.Part mediaPart = MultipartBody.Part.create(RequestBody.create(MediaType.parse(mineType), file));
 
         //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
-        final Call<ResponseBody> galleryItemCall = server.uploadFile(metaPart, mediaPart);
+        final Call<ResponseBody> galleryItemCall = server.uploadMultipleFiles(metaPart, mediaPart);
         galleryItemCall.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {

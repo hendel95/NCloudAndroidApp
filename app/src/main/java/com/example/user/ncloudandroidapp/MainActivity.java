@@ -318,7 +318,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Fragment localFragment = pagerAdapter.getItem(position);
                     LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
                     //localGalleryFragment.resumableUpload();
-                    localGalleryFragment.multipleFilesUpload();
+                    //localGalleryFragment.multipleFilesUpload();
+
+                   localGalleryFragment.multipleFilesUpload();
                     localGalleryFragment.onRefresh();
                     Toast.makeText(MainActivity.this, "사진 업로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
 
@@ -358,6 +360,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             }
         });
+
 
         builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
             @Override

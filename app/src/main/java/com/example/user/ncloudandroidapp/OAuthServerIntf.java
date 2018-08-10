@@ -4,6 +4,7 @@ import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 
 import java.util.List;
+import java.util.Map;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -50,25 +51,8 @@ public interface OAuthServerIntf {
 //            @Field("client_secret")String client_secret, //Is not relevant for Android application
             @Field("grant_type") String grant_type);
 
-    //@POST("/upload/drive/v3/files?uploadType=media")
-
-
-    /**
-     * The call to retrieve the files of our User in GDrive
-     */
-
-
-
-
-    /*Multipart Upload*/
-    @Multipart
-    @POST("upload/drive/v3/files?uploadType=multipart")
-    Call<ResponseBody> uploadFile(
-            @Part MultipartBody.Part metaPart,
-            @Part MultipartBody.Part mediaPart
-    );
-
     /*Resumable Upload*/
+
     @POST("upload/drive/v3/files?uploadType=resumable")
     Call<ResponseBody> resumableUpload(
             @Header("X-Upload-Content-Type") String x_upload_content_type,
@@ -82,13 +66,27 @@ public interface OAuthServerIntf {
     Call<ResponseBody> sendSessionUri(
             @Query("upload_id") String upload_id,
             @Header("Content-Type") String content_type,
-            @Header("Content-Length") String content_length
+            @Header("Content-Length") String content_length,
+            @Header("Content-Range") String content_range
     );
 
 
+    @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadMultipleFilesDynamic(
-            @Part List<MultipartBody.Part> files
+
+            //@PartMap Map<String, String> partMap
+            @Part List<MultipartBody.Part> metaPartList
+            //@Part List<MultipartBody.Part> mediaPartList
+    );
+///////////////////////////////////////////////
+
+    /*Multipart Upload*/
+    @Multipart
+    @POST("upload/drive/v3/files?uploadType=multipart")
+    Call<ResponseBody> uploadMultipleFiles(
+            @Part MultipartBody.Part metaPart,
+            @Part MultipartBody.Part mediaPart
     );
 
     @Streaming

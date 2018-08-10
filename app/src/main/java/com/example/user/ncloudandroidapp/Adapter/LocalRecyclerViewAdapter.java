@@ -21,6 +21,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
+import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.user.ncloudandroidapp.LocalDetailedImageActivity;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
@@ -30,6 +32,7 @@ import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
 import com.example.user.ncloudandroidapp.R;
 
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,8 +46,11 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
 
     private static final int TYPE_HEADER = 0;
     private static final int TYPE_ITEM = 1;
+    private static final int TYPE_FOOTER = 2;
 
     Context mContext;
+
+    protected boolean isFooterAdded = false;
 
    // private SparseBooleanArray itemStateArray = new SparseBooleanArray();
     private HashMap<Integer, Boolean> itemCheckedStates = new HashMap<>();
@@ -83,7 +89,10 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         } else if (viewType == TYPE_ITEM) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
             return new ItemViewHolder(layoutView);
-        }
+        } else if (viewType == TYPE_FOOTER) {
+        View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_item, parent, false);
+        return new LoadingViewHolder(layoutView);
+    }
         throw new RuntimeException("No match for " + viewType + ".");
     }
 
@@ -115,14 +124,105 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
                 checkBox.setVisibility(View.GONE);
             }
 
+            /*
+            Bitmap bitmap = BitmapFactory.decodeFile(((LocalGalleryItem) item).getThumbnailPath());
+
+            ExifInterface exif = null;
+            try {
+                exif = new ExifInterface(((LocalGalleryItem) item).getPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_UNDEFINED);
+
+            Log.i(TAG, "orientation =" + orientation);
+            Bitmap bmRotated = rotateBitmap(bitmap, orientation);
+
+
             Glide.with(mContext)
-                    .load(((LocalGalleryItem) item).getPath())
+                    .asBitmap()
+                    .load(bmRotated)
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
                     .into(imageView);
 
+*/
+            Glide.with(mContext)
+                    .load(((LocalGalleryItem) item).getThumbnailPath())
+                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
+                    .into(imageView);
 
+        }else if (holder instanceof LoadingViewHolder) {
         }
 
+    }
+    public class RotateTransformation extends BitmapTransformation {
+
+        private float rotateRotationAngle = 0f;
+
+        public RotateTransformation(Context context, float rotateRotationAngle) {
+            //super(context);
+            this.rotateRotationAngle = rotateRotationAngle;
+        }
+
+        @Override
+        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
+            Matrix matrix = new Matrix();
+
+            matrix.postRotate(rotateRotationAngle);
+
+            return Bitmap.createBitmap(toTransform, 0, 0, toTransform.getWidth(), toTransform.getHeight(), matrix, true);
+        }
+
+        @Override
+        public void updateDiskCacheKey(MessageDigest messageDigest) {
+            messageDigest.update(("rotate" + rotateRotationAngle).getBytes());
+        }
+    }
+
+
+    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
+
+        Matrix matrix = new Matrix();
+        switch (orientation) {
+            case ExifInterface.ORIENTATION_NORMAL:
+                return bitmap;
+            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+                matrix.setScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_180:
+                matrix.setRotate(180);
+                break;
+            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+                matrix.setRotate(180);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_TRANSPOSE:
+                matrix.setRotate(90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_90:
+                matrix.setRotate(90);
+                break;
+            case ExifInterface.ORIENTATION_TRANSVERSE:
+                matrix.setRotate(-90);
+                matrix.postScale(-1, 1);
+                break;
+            case ExifInterface.ORIENTATION_ROTATE_270:
+                matrix.setRotate(-90);
+                break;
+            default:
+                return bitmap;
+        }
+        try {
+            Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            bitmap.recycle();
+            return bmRotated;
+        }
+        catch (OutOfMemoryError e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public void setModeChanged(boolean modeChanged){
@@ -231,6 +331,29 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         }
     }
 
+    public void addFooter() {
+        isFooterAdded = true;
+        add(new Item() {
+            @Override
+            public int getItemType() {
+                return TYPE_FOOTER;
+            }
+        });
+    }
+
+
+    public void removeFooter() {
+        isFooterAdded = false;
+
+        int position = mItemList.size() - 1;
+        Item item = getItem(position);
+
+        if (item != null) {
+            mItemList.remove(position);
+            notifyItemRemoved(position);
+        }
+    }
+
     public HashMap<Integer, Boolean> getItemStateArray() {
         return itemCheckedStates;
     }
@@ -239,78 +362,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         itemCheckedStates.clear();
     }
 
-    public int exifOrientationToDegrees(int exifOrientation) {
-        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
-            return 90;
-        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {
-            return 180;
-        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {
-            return 270;
-        }
-        return 0;
-    }
 
-    public Bitmap rotate(Bitmap bitmap, int degrees) {
-        if (degrees != 0 && bitmap != null) {
-            Matrix m = new Matrix();
-            m.setRotate(degrees, (float) bitmap.getWidth() / 2,
-                    (float) bitmap.getHeight() / 2);
 
-            try {
-                Bitmap converted = Bitmap.createBitmap(bitmap, 0, 0,
-                        bitmap.getWidth(), bitmap.getHeight(), m, true);
-                if (bitmap != converted) {
-                    bitmap.recycle();
-                    bitmap = converted;
-                }
-            } catch (OutOfMemoryError ex) {
-                // 메모리가 부족하여 회전을 시키지 못할 경우 그냥 원본을 반환합니다.
-            }
-        }
-        return bitmap;
-    }
-
-    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
-
-        Matrix matrix = new Matrix();
-        switch (orientation) {
-            case ExifInterface.ORIENTATION_NORMAL:
-                return bitmap;
-            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
-                matrix.setScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_180:
-                matrix.setRotate(180);
-                break;
-            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
-                matrix.setRotate(180);
-                matrix.postScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_TRANSPOSE:
-                matrix.setRotate(90);
-                matrix.postScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                matrix.setRotate(90);
-                break;
-            case ExifInterface.ORIENTATION_TRANSVERSE:
-                matrix.setRotate(-90);
-                matrix.postScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_270:
-                matrix.setRotate(-90);
-                break;
-            default:
-                return bitmap;
-        }
-        try {
-            Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-            bitmap.recycle();
-            return bmRotated;
-        } catch (OutOfMemoryError e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
 
 }
