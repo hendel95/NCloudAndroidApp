@@ -4,7 +4,22 @@
     <string name="http_code_400">부적절한 요청입니다.</string>
     <string name="http_code_401">인증되지 않은 사용자입니다.</string>
     <string name="http_code_403">요청할 수 없는 리소스입니다.</string>
-    <string name="http_code_404">사용 불가능한 Method 입니다.</string>
+    <string name="http_code_404">요청한 리소스를 찾을 수 없습니다.</string>
+    <string name="http_code_504">데이터를 로드할 수 없습니다. 네트워크 연결을 확인해주세요.</string>
     <string name="loginactivity_grantsfails_quit">앱이 작동하지 않습니다.</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="title_activity_navigation_drawer">NavigationDrawer</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="nav_header_title">Android Studio</string>
+    <string name="nav_header_subtitle">android.studio@android.com</string>
+    <string name="nav_header_desc">Navigation header</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="ok_dialog">예</string>
+    <string name="cancel_dialog">아니오</string>
+    <string name="title_activity_main2">Main2Activity</string>
 
 </resources>

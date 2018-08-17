@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    >
+    <!-- "Mark Favorite", should appear as action button if possible -->
+    <item
+        android:id="@+id/action_upload"
+        android:title="upload_btn"
+        android:icon="@drawable/ic_action_upload"
+        app:showAsAction="ifRoom"/>
+
+    <item android:id="@+id/action_local_info"
+        android:title="사진 정보"
+        app:showAsAction="never"/>
+
+    <item android:id="@+id/action_local_delete"
+        android:title="사진 삭제"
+        app:showAsAction="never"/>
+
+
+</menu>

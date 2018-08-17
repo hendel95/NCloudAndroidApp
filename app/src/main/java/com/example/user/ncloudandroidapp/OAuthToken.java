@@ -5,9 +5,15 @@ import android.content.SharedPreferences;
 import android.util.Log;
 import com.squareup.moshi.Json;
 
+import lombok.Getter;
+import lombok.Setter;
+
 /**
  * Created by Mathias Seguy - Android2EE on 06/01/2017.
  */
+
+@Getter
+@Setter
 public class OAuthToken {
     private static final String TAG = "OAuthToken";
     /***********************************************************
@@ -49,40 +55,6 @@ public class OAuthToken {
         ed.commit();
     }
 
-    /***********************************************************
-     * Getters and Setters
-     **********************************************************/
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    public long getExpiresIn() {
-        return expiresIn;
-    }
-
-    public String getRefreshToken() {
-        return refreshToken;
-    }
-
-    public String getTokenType() {
-        return tokenType;
-    }
-
-    void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
-
-    void setExpiredAfterMilli(long expiredAfterMilli) {
-        this.expiredAfterMilli = expiredAfterMilli;
-    }
-
-    void setRefreshToken(String refreshToken) {
-        this.refreshToken = refreshToken;
-    }
-
-    void setTokenType(String tokenType) {
-        this.tokenType = tokenType;
-    }
 
     @Override
     public String toString() {
@@ -127,7 +99,7 @@ public class OAuthToken {
                     return oauthToken;
                 } else {
 
-                    Log.e(TAG, "NOT (expiredAfter==0||now<expiredAfter) current case, token is valid");
+                    Log.e(TAG, "NOT (expiredAfter==0||now＞expiredAfter) current case, token is valid");
                     //rebuild the object according to the SP
                     OAuthToken oauthToken = new OAuthToken();
                     oauthToken.setAccessToken(sp.getString(SP_TOKEN_KEY, null));

@@ -1,335 +1,466 @@
 package com.example.user.ncloudandroidapp;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.drawable.Drawable;
-import android.os.Handler;
+import android.net.Uri;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
-import android.support.v4.view.GestureDetectorCompat;
+import android.support.design.widget.BottomNavigationView;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
+import android.support.design.widget.Snackbar;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.view.ViewPager;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.text.method.ScrollingMovementMethod;
+import android.support.v7.widget.Toolbar;
+import android.util.AttributeSet;
 import android.util.Log;
-import android.view.GestureDetector;
-import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.AdapterView;
+import android.widget.CheckBox;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.Toast;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.RequestOptions;
-import com.bumptech.glide.request.target.SimpleTarget;
-import com.bumptech.glide.request.transition.Transition;
+import com.example.user.ncloudandroidapp.Adapter.TabPagerAdapter;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.OutputStream;
-import java.sql.Time;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
+
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnCheckedChanged;
-import butterknife.OnClick;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
     private static final String TAG = "MainActivity";
-    private static final String FIELDS = "files/id, files/name, files/mimeType, files/thumbnailLink, files/createdTime";
-    private static final String Q = "mimeType contains 'image' and trashed = false";
-    private static final int DEFAULT_SPAN_COUNT = 3;
-    private List<Item> mItemList = new ArrayList<>();
-    private CustomRecyclerViewAdapter mAdapter;
-    //  @BindView(R.id.image_view)
-    // ImageView mImageView;
+    private TabPagerAdapter pagerAdapter;
+    private static final int GDRIVE = 0;
+    private static final int LOCAL = 1;
 
-    @BindView(R.id.recycler_view)
-    RecyclerView mRecyclerView;
+    public final int ORDER_CREATED_DESC = 1;
+    public final int ORDER_CREATED_ASC = 2;
+    public final int ORDER_MODEFIED_DESC = 3;
+    public final int ORDER_MODEFIED_ASC = 4;
 
+
+    @BindView(R.id.tabLayout)
+    TabLayout mTabLayout;
+    @BindView(R.id.toolbar)
+    Toolbar mToolbar;
+    @BindView(R.id.pager)
+    CustomViewPager mViewPager;
+    @BindView(R.id.bottom_nav_gdrive)
+    ConstraintLayout mConstraintLayoutGDrive;
+    @BindView(R.id.bottom_nav_local)
+    ConstraintLayout mConstraintLayoutLocal;
+    @BindView(R.id.nav_upload_local)
+    ImageButton mUploadLocal;
+    @BindView(R.id.nav_delete_local)
+    ImageButton mDeleteLocal;
+    @BindView(R.id.nav_download_gdrive)
+    ImageButton mDownloadGDrive;
+    @BindView(R.id.nav_delete_gdrive)
+    ImageButton mDeleteGDrive;
+    @BindView(R.id.multiple_selection_bar)
+    ConstraintLayout mMultipleSelection;
+    @BindView(R.id.cancel_button)
+    ImageButton mCancelButton;
+    @BindView(R.id.nav_view)
+    NavigationView navigationView;
+    @BindView(R.id.drawer_layout)
+    DrawerLayout drawer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        listGDriveUserFiles();
         ButterKnife.bind(this);
 
-    }
+        setSupportActionBar(mToolbar);
+
+        // Get the ActionBar here to configure the way it behaves.
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setDisplayShowCustomEnabled(true); //커스터마이징 하기 위해 필요
+        actionBar.setDisplayShowTitleEnabled(true);
+        setTitle("WM Gallery APP");
 
 
-    private void listGDriveUserFiles() {
-        OAuthServerIntf server = RetrofitBuilder.getOAuthClient(this);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeAsUpIndicator(R.drawable.ic_action_menu_dark);
 
-        Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q);
+        // Initializing the TabLayout
+        mTabLayout.addTab(mTabLayout.newTab().setText("구글 드라이브"));
+        mTabLayout.addTab(mTabLayout.newTab().setText("내 사진첩"));
 
-        galleryItemCall.enqueue(new Callback<GalleryItems>() {
+        mConstraintLayoutGDrive.bringToFront();
+        mConstraintLayoutLocal.bringToFront();
+
+        mToolbar.setOnClickListener(this);
+
+        // Creating TabPagerAdapter adapter
+        pagerAdapter = new TabPagerAdapter(getSupportFragmentManager(), mTabLayout.getTabCount());
+        mViewPager.setAdapter(pagerAdapter);
+        mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mTabLayout));
+        mTabLayout.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+
             @Override
-            public void onResponse(Call<GalleryItems> call, Response<GalleryItems> response) {
-                if (response.code() == 200 && response.body() != null) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_200), Toast.LENGTH_SHORT).show();
-                    configViews(response);
-                } else if (response.code() == 400) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 401) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 403) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
-                } else if (response.code() == 404) {
-                    Toast.makeText(MainActivity.this, response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
-                }
+            public void onTabSelected(TabLayout.Tab tab) {
+                mViewPager.setCurrentItem(tab.getPosition());
             }
 
             @Override
-            public void onFailure(Call<GalleryItems> call, Throwable t) {
-                Log.e(TAG, "The call listFilesCall failed", t);
+            public void onTabUnselected(TabLayout.Tab tab) {
+
             }
 
-        });
-
-    }
-
-
-    private void configViews(Response<GalleryItems> response) {
-
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(getApplicationContext(), DEFAULT_SPAN_COUNT);
-
-        mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
-        mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.setLayoutManager(gridLayoutManager);
-
-
-       List<GalleryItem> itemsGallery = new ArrayList<>();
-       itemsGallery.addAll(response.body().getFiles());
-
-        Collections.sort(itemsGallery, new Comparator<GalleryItem>() {
             @Override
-            public int compare(GalleryItem o1, GalleryItem o2) {
-                SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-                try {
-                    Date d1 = format.parse(o1.getCreatedTime());
-                    Date d2 = format.parse(o2.getCreatedTime());
-                    return d2.compareTo(d1);
-                }
-                catch (Exception e){
-                    e.printStackTrace();
-                    return 0;
-                }
+            public void onTabReselected(TabLayout.Tab tab) {
+
             }
         });
 
-        for (int i = 0; i < response.body().getFiles().size(); i++) {
-            GalleryItem galleryItem = itemsGallery.get(i);
-            if(i != 0){
-                //이전 것과 compare 했을 때, 날짜가 같지 않다면 header 생성해주기
-                if(compareTime(itemsGallery.get(i-1), itemsGallery.get(i)) != 0){
-                    mItemList.add(new HeaderItem(dateFormatting(galleryItem.getCreatedTime())));
-                    mItemList.add(galleryItem);
+        mUploadLocal.setOnClickListener(this);
+        mDeleteLocal.setOnClickListener(this);
+        mDownloadGDrive.setOnClickListener(this);
+        mDeleteGDrive.setOnClickListener(this);
+        mCancelButton.setOnClickListener(this);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, mToolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        navigationView.setNavigationItemSelectedListener(this);
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        //return super.onCreateOptionsMenu(menu);
+        MenuInflater menuInflater = getMenuInflater();
+        menuInflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.nav_gallery) {
+            Toast.makeText(getApplicationContext(), "SLIDE!", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getApplicationContext(), UploadResultActivity.class);
+            startActivity(intent);
+
+        } else if (id == R.id.nav_slideshow) {
+            Toast.makeText(getApplicationContext(), "GALLERY!", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getApplicationContext(), DownloadResultActivity.class);
+            startActivity(intent);
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        Log.i(TAG, "CLOSE");
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            case R.id.action_choose:
+                setVisibility();
+                return true;
+
+            case R.id.action_settings1:
+                setListOrder(ORDER_CREATED_DESC);
+                return true;
+
+            case R.id.action_settings2:
+                setListOrder(ORDER_CREATED_ASC);
+                return true;
+            case R.id.action_settings3:
+                setListOrder(ORDER_MODEFIED_DESC);
+                return true;
+            case R.id.action_settings4:
+                setListOrder(ORDER_MODEFIED_ASC);
+                return true;
+
+            default:
+
+                Toast.makeText(getApplicationContext(), "정렬 버튼", Toast.LENGTH_LONG).show();
+                return super.onOptionsItemSelected(item);
+        }
+
+    }
+
+    @Override
+    public void onClick(View v) {
+
+        switch (v.getId()) {
+
+            case R.id.nav_delete_local:
+                //Toast.makeText(MainActivity.this, "DELETE", Toast.LENGTH_LONG).show();
+                dialogBuilderDeleteFiles();
+
+                break;
+
+            case R.id.nav_upload_local:
+                Toast.makeText(MainActivity.this, "UPLOAD", Toast.LENGTH_LONG).show();
+                dialogBuilderUploadFiles();
+                break;
+
+            case R.id.nav_delete_gdrive:
+                //Toast.makeText(MainActivity.this, "DELETE", Toast.LENGTH_LONG).show();
+                dialogBuilderDeleteFiles();
+
+
+                break;
+
+            case R.id.nav_download_gdrive:
+                Toast.makeText(MainActivity.this, "DOWNLOAD", Toast.LENGTH_LONG).show();
+                dialogBuilderDownloadFiles();
+                break;
+
+            case R.id.cancel_button:
+                setVisibility();
+
+                break;
+
+            case R.id.toolbar:
+                int position = mTabLayout.getSelectedTabPosition();
+                Fragment fragment = pagerAdapter.getItem(position);
+
+                if (position == GDRIVE) {
+                    //Fragment fragment = pagerAdapter.getItem(position);
+
+                    GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) fragment);
+                    gDriveGalleryFragment.moveToTopOfThePage();
+
+                } else if (position == LOCAL) {
+                    //Fragment fragment = pagerAdapter.getItem(position);
+
+                    LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) fragment);
+                    localGalleryFragment.moveToTopOfThePage();
+
                 }
-                else{ //같다면 사진만 추가해주기
-                    mItemList.add(galleryItem);
-                }
+
+                break;
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+
+    private void setListOrder(int order) {
+        int position = mTabLayout.getSelectedTabPosition();
+        if (position == GDRIVE) {
+            Fragment gdriveFragment = pagerAdapter.getItem(position);
+            GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+            gDriveGalleryFragment.setOrderByNum(order);
+        } else if (position == LOCAL) {
+            Fragment localFragment = pagerAdapter.getItem(position);
+            LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+            localGalleryFragment.setOrderByNum(order);
+        }
+    }
+
+    private void setVisibility() {
+        int position = mTabLayout.getSelectedTabPosition();
+
+        if (position == LOCAL) {
+
+            Fragment localFragment = pagerAdapter.getItem(position);
+            LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+
+            if (mToolbar.getVisibility() == View.VISIBLE) {
+                mConstraintLayoutLocal.setVisibility(View.VISIBLE);
+                mTabLayout.setVisibility(View.GONE);
+                mViewPager.setSwipeLocked(true);
+                mMultipleSelection.setVisibility(View.VISIBLE);
+                mToolbar.setVisibility(View.GONE);
+                setTitle("내 사진첩");
+                localGalleryFragment.changeMode(true);
+                localGalleryFragment.refresh();
+                localGalleryFragment.clearCheckBoxes();
+            } else {
+                mConstraintLayoutLocal.setVisibility(View.GONE);
+                mTabLayout.setVisibility(View.VISIBLE);
+                mViewPager.setSwipeLocked(false);
+                mMultipleSelection.setVisibility(View.GONE);
+                mToolbar.setVisibility(View.VISIBLE);
+                setTitle("WM Gallery APP");
+                localGalleryFragment.changeMode(false);
+                localGalleryFragment.refresh();
+                localGalleryFragment.clearCheckBoxes();
             }
-            else {
-                mItemList.add(new HeaderItem(dateFormatting(galleryItem.getCreatedTime())));
-                mItemList.add(galleryItem);
+        } else if (position == GDRIVE) {
+
+            Fragment gdriveFragment = pagerAdapter.getItem(position);
+            GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+            gDriveGalleryFragment.deleteItems();
+
+            if (mToolbar.getVisibility() == View.VISIBLE) {
+                mConstraintLayoutGDrive.setVisibility(View.VISIBLE);
+                mTabLayout.setVisibility(View.GONE);
+                mViewPager.setSwipeLocked(true);
+                mMultipleSelection.setVisibility(View.VISIBLE);
+                mToolbar.setVisibility(View.GONE);
+                setTitle("구글 드라이브");
+                gDriveGalleryFragment.changeMode(true);
+                gDriveGalleryFragment.refresh();
+                gDriveGalleryFragment.clearCheckBoxes();
+            } else {
+                mConstraintLayoutGDrive.setVisibility(View.GONE);
+                mTabLayout.setVisibility(View.VISIBLE);
+                mViewPager.setSwipeLocked(false);
+                mMultipleSelection.setVisibility(View.GONE);
+                mToolbar.setVisibility(View.VISIBLE);
+                setTitle("WM Gallery APP");
+                gDriveGalleryFragment.changeMode(false);
+                gDriveGalleryFragment.refresh();
+                gDriveGalleryFragment.clearCheckBoxes();
             }
         }
-        mAdapter = new CustomRecyclerViewAdapter(mItemList, gridLayoutManager, DEFAULT_SPAN_COUNT);
-
-        mRecyclerView.setAdapter(mAdapter);
 
     }
 
-    public int compareTime(GalleryItem o1, GalleryItem o2) {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        try {
-            Date d1 = format.parse(rfcToDate(o1.getCreatedTime()));
-            Date d2 = format.parse(rfcToDate(o2.getCreatedTime()));
-            return d2.compareTo(d1);
+    private void dialogBuilderDeleteFiles() {
+        int position = mTabLayout.getSelectedTabPosition();
+        int checkedItemCount = 0;
+        if (position == GDRIVE) {
+            Fragment gdriveFragment = pagerAdapter.getItem(position);
+            GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+            checkedItemCount = gDriveGalleryFragment.getCheckCount();
+        } else {
+            Fragment localFragment = pagerAdapter.getItem(position);
+            LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+            checkedItemCount = localGalleryFragment.getCheckCount();
         }
-        catch (Exception e){
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
-    public String rfcToDate(String originalTime){
-        String newTime = "";
-
-        try {
-           SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-           Date date = format.parse(originalTime);
-           SimpleDateFormat s = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-           newTime = s.format(date);
-           return newTime;
-       }
-       catch (Exception e) {
-           e.printStackTrace();
-           return null;
-       }
-
-    }
-
-    public String dateFormatting(String createdTime) {
-        String newTime = "";
-
-        try {
-
-            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-            //   format.setTimeZone(TimeZone.getTimeZone("UTC"));
-            Date date = format.parse(createdTime);
-            SimpleDateFormat s = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.getDefault());
-            // s.setTimeZone(TimeZone.getDefault());
-            newTime = s.format(date);
-            return newTime;
-
-        } catch (Exception e) {
-
-            e.printStackTrace();
-            return null;
-
-        }
-
-    }
-
-
-    public class CustomRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
-
-        private int mDefaultSpanCount;
-        private List<Item> itemObjects;
-
-        private static final int TYPE_HEADER = 0;
-        private static final int TYPE_ITEM = 1;
-
-        public CustomRecyclerViewAdapter(List<Item> itemObjects, GridLayoutManager gridLayoutManager, int defaultSpanCount) {
-            this.itemObjects = itemObjects;
-            mDefaultSpanCount = defaultSpanCount;
-            gridLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
+        if (checkedItemCount > 0) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("삭제하기");
+            builder.setMessage(checkedItemCount + "장의 사진을 삭제 하시겠습니까?");
+            builder.setPositiveButton(R.string.ok_dialog, new DialogInterface.OnClickListener() {
                 @Override
-                public int getSpanSize(int position) {
-                    return isHeaderType(position) == TYPE_HEADER ? mDefaultSpanCount : 1;
-                    //return position == 0 ? mDefaultSpanCount : 1; // 수정 예정
+                public void onClick(DialogInterface dialog, int which) {
+
+                    int position = mTabLayout.getSelectedTabPosition();
+
+                    if (position == GDRIVE) {
+                        Fragment gdriveFragment = pagerAdapter.getItem(position);
+                        GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+                        gDriveGalleryFragment.deleteItems();
+                        gDriveGalleryFragment.onRefresh();
+                        Toast.makeText(MainActivity.this, "사진 삭제를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                    } else if (position == LOCAL) {
+                        Fragment localFragment = pagerAdapter.getItem(position);
+                        LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+                        localGalleryFragment.deleteItems();
+                        localGalleryFragment.onRefresh();
+                        Toast.makeText(MainActivity.this, "사진 삭제를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                    }
                 }
             });
-        }
 
-        private int isHeaderType(int position) {
-            int itemType = itemObjects.get(position).getItemType();
-            Log.d(TAG, "ItemType = " + Integer.toString(itemType));
-            return itemObjects.get(position).getItemType() == TYPE_HEADER ? 0 : 1;
-        }
+            builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
 
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            if (viewType == TYPE_HEADER) {
-                View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_layout, parent, false);
-                return new HeaderViewHolder(layoutView);
-            } else if (viewType == TYPE_ITEM) {
-                View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
-                return new ItemViewHolder(layoutView);
-            }
-            throw new RuntimeException("No match for " + viewType + ".");
-        }
-
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-
-
-            Item mObject = itemObjects.get(position);
-
-            if (holder instanceof HeaderViewHolder) { //header 인 경우 binding
-                ((HeaderViewHolder) holder).headerTitle.setText(((HeaderItem) mObject).getCreatedTime());
-
-            } else if (holder instanceof ItemViewHolder) { //list item 인 경우 binding
-                ImageView imageView = ((ItemViewHolder) holder).mPhotoImageView;
-
-                Glide.with(MainActivity.this)
-                        .load(((GalleryItem) mObject).getThumbnailLink())
-                        .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
-                        .into(imageView);
-            }
-
-
-        }
-
-        private Item getItem(int position) {
-            return itemObjects.get(position);
-        }
-
-        @Override
-        public int getItemCount() {
-            return itemObjects.size();
-        }
-
-        public void addItem(Item item) {
-            mItemList.add(item);
-            notifyDataSetChanged();
-        }
-
-        public void addAllItems(List<Item> items) {
-            mItemList.addAll(items);
-            notifyDataSetChanged();
-        }
-
-
-        @Override
-        public int getItemViewType(int position) {
-            return mItemList.get(position).getItemType();
-        }
-
-
-        public class HeaderViewHolder extends RecyclerView.ViewHolder {
-            public TextView headerTitle;
-
-            public HeaderViewHolder(View itemView) {
-                super(itemView);
-                headerTitle = (TextView) itemView.findViewById(R.id.headerTitle);
-            }
-        }
-
-        public class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-
-            public ImageView mPhotoImageView;
-
-            public ItemViewHolder(View itemView) {
-                super(itemView);
-                mPhotoImageView = (ImageView) itemView.findViewById(R.id.fragment_gallery_image_view);
-                itemView.setOnClickListener(this);
-            }
-
-            @Override
-            public void onClick(View view) {
-                int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION) {
-                    GalleryItem galleryItem = (GalleryItem) itemObjects.get(position);
-                    Intent intent = new Intent(view.getContext(), PhotoUploadActivity.class);
-                    intent.putExtra(PhotoUploadActivity.EXTRA_SPACE_PHOTO, galleryItem);
-                    startActivity(intent);
                 }
-            }
+            });
 
+            builder.show();
+        }
+
+    }
+
+    private void dialogBuilderUploadFiles() {
+        int position = mTabLayout.getSelectedTabPosition();
+        Fragment localFragment = pagerAdapter.getItem(position);
+        final LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
+
+        int checkedItemCount = localGalleryFragment.getCheckCount();
+        if (checkedItemCount > 0) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            builder.setTitle("업로드");
+            builder.setMessage(checkedItemCount + "장의 사진을 업로드 하시겠습니까?");
+            builder.setPositiveButton(R.string.ok_dialog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    localGalleryFragment.multipleFilesUpload();
+                    localGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 업로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
+                }
+            });
+
+            builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+
+            builder.show();
+
+        }
+
+    }
+
+    private void dialogBuilderDownloadFiles() {
+        int position = mTabLayout.getSelectedTabPosition();
+        Fragment gdriveFragment = pagerAdapter.getItem(position);
+        final GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
+
+        int checkedItemCount = gDriveGalleryFragment.getCheckCount();
+        if (checkedItemCount > 0) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("다운로드");
+            builder.setMessage(checkedItemCount + "장의 사진을 다운로드 하시겠습니까?");
+            builder.setPositiveButton(R.string.ok_dialog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                    gDriveGalleryFragment.downloadMultipleFiles();
+                    gDriveGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 다운로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
+
+                }
+            });
+
+
+            builder.setNegativeButton(R.string.cancel_dialog, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+
+            builder.show();
         }
 
     }

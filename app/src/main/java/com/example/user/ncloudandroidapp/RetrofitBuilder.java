@@ -3,13 +3,14 @@ package com.example.user.ncloudandroidapp;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.google.android.gms.drive.Drive;
 
 import java.io.File;
-import java.nio.file.Files;
+import java.net.CookieHandler;
+import java.net.CookieManager;
 
 import okhttp3.Cache;
 import okhttp3.Interceptor;
+import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -82,6 +83,8 @@ public class RetrofitBuilder {
         // You should create it...
         int cacheSize=1024*1024;
         Cache cacheDir=new Cache(myCacheDir,cacheSize);
+
+
         HttpLoggingInterceptor httpLogInterceptor=new HttpLoggingInterceptor();
         httpLogInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         return new OkHttpClient.Builder()
@@ -104,6 +107,7 @@ public class RetrofitBuilder {
         // Define the OkHttp Client with its cache!
         // Assigning a CacheDirectory
 
+        CookieHandler cookieHandler = new CookieManager();
 
         File myCacheDir=new File(ctx.getCacheDir(),"OkHttpCache");
         // You should create it...
@@ -114,6 +118,7 @@ public class RetrofitBuilder {
         httpLogInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
         return new OkHttpClient.Builder()
                 .cache(cacheDir)
+                .cookieJar(new JavaNetCookieJar(cookieHandler))
                 .addInterceptor(oAuthInterceptor)
                 .addInterceptor(httpLogInterceptor)
                 .build();

@@ -10,6 +10,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 import okhttp3.HttpUrl;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -23,10 +28,13 @@ public class LoginActivity extends AppCompatActivity {
 
     // you should either define client id and secret as constants or in string resources
     private final String CLIENT_ID = "610143887746-cuiinmh0rv9beoasd74gdcmuljhtcp4c.apps.googleusercontent.com";
+
     //private final String clientSecret = "your-client-secret";
     private static final String CODE = "code";
+
     private final String REDIRECT_URI = "com.example.user.ncloudandroidapp:/redirecturi";
     private static final String REDIRECT_URI_ROOT = "com.example.user.ncloudandroidapp";
+
     public static final String API_SCOPE = "https://www.googleapis.com/auth/drive";
 
     private static final String GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code";
@@ -96,7 +104,7 @@ public class LoginActivity extends AppCompatActivity {
             else {
                 Log.e(TAG, "onCreate: Token available, just launch MainActivity");
                 startMainActivity(false);
-            }
+                }
         }
     }
 
@@ -191,6 +199,7 @@ public class LoginActivity extends AppCompatActivity {
      * Start the next activity
      */
     private void startMainActivity(boolean newtask) {
+        //Intent i = new Intent(this, LocalGalleryActivity.class);
         Intent i = new Intent(this, MainActivity.class);
         if(newtask){
             i.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
