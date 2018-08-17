@@ -2,19 +2,15 @@ package com.example.user.ncloudandroidapp.Adapter;
 
 import android.content.Context;
 import android.content.Intent;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.view.menu.MenuView;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.Switch;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
@@ -80,7 +76,7 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == TYPE_HEADER) {
-            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_layout, parent, false);
+            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_item, parent, false);
             return new HeaderViewHolder(layoutView);
         } else if (viewType == TYPE_ITEM) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
@@ -189,6 +185,7 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
 
                     if (isChecked == true) {
                         itemCheckedStates.put(adapterPosition, isChecked);
+                        Log.d(TAG, "Check Box" + adapterPosition);
                     } else {
                         itemCheckedStates.remove(adapterPosition);
                     }
@@ -204,9 +201,22 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
 
             if (position != RecyclerView.NO_POSITION) {
                 if (isModeChanged) {
-
                     int adapterPosition = getAdapterPosition();
-                    itemCheckedStates.put(adapterPosition, true);
+
+                    if(itemCheckedStates.get(adapterPosition) != null){
+                        itemCheckedStates.remove(adapterPosition);
+                        mCheckBox.setChecked(false);
+
+                        Log.d(TAG, "Item Removed" + adapterPosition);
+
+                    }
+                    else {
+                        itemCheckedStates.put(adapterPosition, true);
+                        mCheckBox.setChecked(true);
+                        Log.d(TAG, "Item Checked" + adapterPosition);
+
+                    }
+
 
                 } else {
 

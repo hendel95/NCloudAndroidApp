@@ -1,24 +1,20 @@
 package com.example.user.ncloudandroidapp;
 
-import android.app.DownloadManager;
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
@@ -29,6 +25,8 @@ import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
+import com.example.user.ncloudandroidapp.Room.DownloadFile;
+import com.example.user.ncloudandroidapp.Room.FileDatabase;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,6 +34,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -67,13 +66,19 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
     private String mParam1;
     private String mParam2;
 
-    public static final int OK          = 200;
-
+    public static final int OK = 200;
+    public static final int CREATED = 201;
+    public static final int INCOMPLETE = 308;
+    public static final int BAD_REQUEST = 400;
+    public static final int UNAUTHORIZED = 401;
+    public static final int FORBIDDEN = 403;
+    public static final int NOT_FOUND = 404;
+    public static final int GATEWAY_TIMEOUT = 504;
 
     private static final String TAG = "GDriveGalleryFragment";
     private static final String FIELDS = "nextPageToken, files/id, files/name, files/mimeType, files/thumbnailLink, files/createdTime";
     private static final String Q = "mimeType contains 'image' and trashed = false";
-    private static final String ORDER = "createdTime desc";
+    private static String ORDER = "createdTime desc";
     private static final Integer PAGE_SIZE = 100;
     private String PAGE_TOKEN = null;
 
@@ -87,6 +92,11 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
 
     private boolean isLastPage = false;
     private boolean isLoading = false;
+
+    public final int ORDER_CREATED_DESC = 1;
+    public final int ORDER_CREATED_ASC = 2;
+    public final int ORDER_MODEFIED_DESC = 3;
+    public final int ORDER_MODEFIED_ASC = 4;
 
     @BindView(R.id.gdrive_fragment_recycler_view)
     RecyclerView mRecyclerView;
@@ -159,6 +169,38 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
         return view;
     }
 
+
+
+
+    public void setOrderByNum(int order){
+        switch (order){
+            case ORDER_CREATED_DESC:
+                setORDER("createdTime desc");
+                onRefresh();
+                break;
+
+            case ORDER_CREATED_ASC:
+                setORDER("createdTime asc");
+                onRefresh();
+                break;
+
+            case ORDER_MODEFIED_DESC:
+                setORDER("modifiedTime desc");
+                onRefresh();
+                break;
+
+            case ORDER_MODEFIED_ASC:
+                setORDER("modifiedTime asc");
+                onRefresh();
+                break;
+        }
+    }
+    public static void setORDER(String ORDER) {
+        GDriveGalleryFragment.ORDER = ORDER;
+    }
+
+
+
     private void startList() {
         PAGE_TOKEN = null;
         //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getActivity());
@@ -212,7 +254,9 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
             GalleryItems galleryItems = response.body();
             isLoading = false;
 
-            if (response.code() == 200 && galleryItems != null) {
+            if (response.code() == OK && galleryItems != null) {
+                mTextView.setVisibility(View.GONE);
+
                 PAGE_TOKEN = galleryItems.getNextPageToken();
                 List<GalleryItem> items = galleryItems.getFiles();
                 if (items != null) {
@@ -231,19 +275,19 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
 
                 }
 
-            } else if (response.code() == 400) {
+            } else if (response.code() == BAD_REQUEST) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_400), Toast.LENGTH_SHORT).show();
-            } else if (response.code() == 401) {
+            } else if (response.code() == UNAUTHORIZED) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_401), Toast.LENGTH_SHORT).show();
-            } else if (response.code() == 403) {
+            } else if (response.code() == FORBIDDEN) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_403), Toast.LENGTH_SHORT).show();
-            } else if (response.code() == 404) {
+            } else if (response.code() == NOT_FOUND) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_404), Toast.LENGTH_SHORT).show();
-            } else if (response.code() == 504) {
+            } else if (response.code() == GATEWAY_TIMEOUT) {
                 Toast.makeText(getActivity(), response.message() + "\r\n" + getString(R.string.http_code_504), Toast.LENGTH_SHORT).show();
-            } else if (response.code() == 200 && galleryItems == null) {
-                mTextView.setText(R.string.empty_file);
-                mTextView.bringToFront();
+            } else if (response.code() == OK && galleryItems == null) {
+                mTextView.setVisibility(View.VISIBLE);
+                //mTextView.bringToFront();
             }
         }
 
@@ -382,6 +426,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
             Call<ResponseBody> responseBodyCall = server.downloadFile(finalGalleryItem.getId());
 
             responseBodyCall.enqueue(new Callback<ResponseBody>() {
+                @SuppressLint("StaticFieldLeak")
                 @Override
                 public void onResponse(@NonNull Call<ResponseBody> call, @NonNull final Response<ResponseBody> response) {
 
@@ -390,6 +435,12 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
                             @Override
                             protected Void doInBackground(Void... voids) {
                                 boolean writtenToDisk = writeResponseBodyToDisk(response.body(), finalGalleryItem);
+                                if(writtenToDisk){
+                                    Date currentDate = new Date();
+                                    DownloadFile downloadFile = new DownloadFile(finalGalleryItem.getName(), finalGalleryItem.getThumbnailLink(),mCustomDateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
+                                    FileDatabase.getDatabase(getContext()).getFileDao().insertDownloadFile(downloadFile);
+                                }
+
                                 return null;
                             }
                         }.execute();
@@ -404,6 +455,16 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
             });
 
         }
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Intent intent = new Intent(getActivity(), DownloadResultActivity.class);
+                startActivity(intent);
+            }
+        }, 5000);
+
+
     }
 
     private boolean writeResponseBodyToDisk(ResponseBody body, GalleryItem item) {
@@ -512,5 +573,8 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
 
     }
 
+    public int getCheckCount(){
+        return mAdapter.getItemStateArray().size();
+    }
 
 }

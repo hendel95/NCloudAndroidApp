@@ -11,25 +11,32 @@
         app:showAsAction="ifRoom"/>
 
     <!-- Settings, should always be in the overflow -->
-    <item android:id="@+id/action_settings2"
+    <item
+        android:id="@+id/action_settings1"
         android:title="촬영일 - 최신 항목 우선"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
 
-    <item android:id="@+id/action_settings3"
+    <item
+        android:id="@+id/action_settings2"
         android:title="촬영일 - 오래된 항목 우선"
-        app:showAsAction="never"/>
-    <item android:id="@+id/action_settings4"
-        android:title="업로드일 - 최신 항목 우선"
-        app:showAsAction="never"/>
-    <item android:id="@+id/action_settings5"
-    android:title="업로드일 - 최신 항목 우선"
-    app:showAsAction="never"/>
-    <item android:id="@+id/action_settings6"
-        android:title="이름 - 오름 차순 정렬"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
 
-    <item android:id="@+id/action_settings7"
-    android:title="이름 - 내림 차순 정렬"
-    app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_settings3"
+        android:title="수정일 - 최신 항목 우선"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings4"
+        android:title="수정일 - 오래된 항목 우선"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings5"
+        android:title="업로드일 - 최신 항목 우선"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings6"
+        android:title="업로드일 - 최신 항목 우선"
+        app:showAsAction="never" />
 
 </menu>

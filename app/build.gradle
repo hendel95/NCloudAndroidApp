@@ -9,6 +9,14 @@ android {
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
+            }
+        }
+
     }
     buildTypes {
         release {
@@ -49,7 +57,7 @@ dependencies {
     implementation 'com.android.support:recyclerview-v7:26.1.0'
     implementation 'com.squareup.retrofit2:converter-moshi:2.1.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:3.5.0'
-    implementation 'com.google.android.gms:play-services:12.0.1'
+    implementation 'com.squareup.okhttp3:okhttp-urlconnection:3.6.0'
     //Lombok
     compileOnly 'org.projectlombok:lombok:1.18.0'
     annotationProcessor 'org.projectlombok:lombok:1.18.0'
@@ -60,7 +68,16 @@ dependencies {
     //PhotoView
     implementation 'com.github.chrisbanes:PhotoView:2.0.0'
 
+    implementation 'com.android.support:multidex:1.0.3'
+
     //Pagination
     //implementation 'com.github.markomilos:paginate:0.5.1'
+
+    def room_version = "1.1.1"
+
+    implementation "android.arch.persistence.room:runtime:$room_version"
+    annotationProcessor "android.arch.persistence.room:compiler:$room_version"
+
+    compile 'com.google.android.gms:play-services-auth:15.0.1'
 
 }

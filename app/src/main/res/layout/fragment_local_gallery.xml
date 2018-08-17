@@ -11,11 +11,10 @@
         android:id="@+id/local_fragment_text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Empty Text" />
+        android:text="사진첩이 비어있습니다."
+        android:visibility="gone"
+        android:layout_gravity="center"
+   />
 
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshLocal"

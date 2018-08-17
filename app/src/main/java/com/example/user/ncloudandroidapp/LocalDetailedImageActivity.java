@@ -1,47 +1,33 @@
 package com.example.user.ncloudandroidapp;
 
-import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
-import android.opengl.Visibility;
-import android.os.Environment;
-import android.provider.MediaStore;
-import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
+import android.os.Message;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ActionMenuView;
-import android.widget.Button;
-import android.widget.RelativeLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.user.ncloudandroidapp.Adapter.GDriveRecyclerViewAdapter;
-import com.example.user.ncloudandroidapp.Model.GalleryItem;
+import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
+import com.example.user.ncloudandroidapp.Room.FileDatabase;
+import com.example.user.ncloudandroidapp.Room.UploadFile;
 import com.github.chrisbanes.photoview.PhotoView;
 
-import org.w3c.dom.Text;
-
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
-import butterknife.BindInt;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import okhttp3.MediaType;
@@ -56,7 +42,13 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
 
     public static final String EXTRA_LOCAL_PHOTO = "LocalDetailedImageActivity";
     public static final String TAG = "LocalDetailedImageActivity";
+
+    public static final String EXTRA_UPLOAD_PHOTO = "LocalDetailedImageActivity";
     OAuthServerIntf server;
+
+    public final String PARCELABLE_ARRAY_LIST = "UploadResultActivity.INTENT";
+
+
 
     @BindView(R.id.local_detailed_photo)
     PhotoView mPhotoView;
@@ -64,13 +56,24 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
     @BindView(R.id.toolbar_detailed_local)
     Toolbar mToolbar;
 
+
+    @BindView(R.id.gdrive_progressbar)
+    ProgressBar mProgressBar;
+
+    @BindView(R.id.progressbar_text)
+    TextView mTextView;
+
     LocalGalleryItem localGalleryItem;
+    CustomDateFormat mCustomDateFormat = new CustomDateFormat();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_local_detailed_image);
         ButterKnife.bind(this);
+
+        mProgressBar.bringToFront();
+        mTextView.bringToFront();
 
         setSupportActionBar(mToolbar);
         server = RetrofitBuilder.getOAuthClient(getApplication());
@@ -104,7 +107,10 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
             }
         });
 
+
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -117,7 +123,8 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.action_upload:
-                upload();
+                //upload();
+                uploadWithProgressBar();
                 return true;
             case android.R.id.home:
                 Toast.makeText(LocalDetailedImageActivity.this, "Back Button", Toast.LENGTH_LONG).show();
@@ -139,7 +146,7 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
     private void delete(){
         //String file_path = Environment.getExternalStorageDirectory() + File.separator + localGalleryItem.getName();
         File file = new File(localGalleryItem.getPath());
-        Log.i(TAG, file.getAbsolutePath());
+        Log.i(TAG , file.getAbsolutePath());
 
         if(file.exists()){
 
@@ -147,6 +154,81 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
             getApplicationContext().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file) ));
 
         }
+
+    }
+
+    private MultipartBody.Part prepareFilePart(File file, String mimeType){
+        final ProgressRequestBody fileBody = new ProgressRequestBody(getApplicationContext(), file, mimeType, new ProgressRequestBody.UploadCallbacks() {
+
+            @Override
+            public void onProgressUpdate(int percentage) {
+                mProgressBar.setProgress(percentage);
+
+//                mTextView.setText(Integer.toString(percentage));
+                //Log.i("TAG"+"progress", Integer.toString(percentage));
+            }
+
+            @Override
+            public void onError() {
+
+            }
+
+            @Override
+            public void onFinish() {
+                //Log.i("TAG"+"finished", "finished");
+                mProgressBar.setProgress(100);
+//                mTextView.setText("100");
+            }
+        });
+
+        return MultipartBody.Part.createFormData("data", file.getName(), fileBody);
+    }
+
+    private void uploadWithProgressBar(){
+        File file = new File(localGalleryItem.getPath());
+
+        String content = "{\"name\": \"" + file.getName() + "\"}";
+        final ArrayList<LocalGalleryItem> localGalleryItemArrayList = new ArrayList<>();
+
+        //MultipartBody.Part metaPart = MultipartBody.Part.createFormData("metaPart", file.getName(), fileBody);
+       // MultipartBody.Part metaPart1 = MultipartBody.Part.create(RequestBody.create(fileBody.contentType(), content));
+        RequestBody propertyBody = RequestBody.create(MediaType.parse("application/json; charset=UTF-8"), content );
+       //MultipartBody.Part metaPart = MultipartBody.Part.createFormData("metaPart", file.getName(), fileBody.create(fileBody.contentType(), content));
+
+        String mimeType = localGalleryItem.getMimeType();
+
+        //MultipartBody.Part media = MultipartBody.Part.createFormData("file", file.getName(), fileBody);
+
+
+        //MultipartBody.Part mediaPart = MultipartBody.Part.create(RequestBody.create(MediaType.parse(mimeType), file));
+
+        final MultipartBody.Part dataPart = prepareFilePart(file, mimeType);
+        localGalleryItemArrayList.add(localGalleryItem);
+
+        final Call<ResponseBody> galleryItemCall = server.uploadFile(propertyBody,dataPart);
+        galleryItemCall.enqueue(new Callback<ResponseBody>() {
+            @Override
+            public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
+                Toast.makeText(LocalDetailedImageActivity.this, "uploading successfully", Toast.LENGTH_SHORT).show();
+
+                Date currentDate = new Date();
+                UploadFile uploadFile = new UploadFile(localGalleryItem.getName(), localGalleryItem.getThumbnailPath(), mCustomDateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
+                FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
+
+                Intent intent = new Intent(getApplicationContext(), UploadResultActivity.class);
+                startActivity(intent);
+
+                Log.d("response", response.body().toString());
+            }
+
+            @Override
+            public void onFailure(Call<ResponseBody> call, Throwable t) {
+                Toast.makeText(LocalDetailedImageActivity.this, "uploading failed", Toast.LENGTH_SHORT).show();
+
+            }
+        });
+
+
 
     }
 
@@ -158,8 +240,8 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
         String content = "{\"name\": \"" + file.getName() + "\"}";
 
         MultipartBody.Part metaPart = MultipartBody.Part.create(RequestBody.create(contentType, content));
-        String mineType = localGalleryItem.getMimeType();
-        MultipartBody.Part mediaPart = MultipartBody.Part.create(RequestBody.create(MediaType.parse(mineType), file));
+        String mimeType = localGalleryItem.getMimeType();
+        MultipartBody.Part mediaPart = MultipartBody.Part.create(RequestBody.create(MediaType.parse(mimeType), file));
 
         //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
         final Call<ResponseBody> galleryItemCall = server.uploadMultipleFiles(metaPart, mediaPart);

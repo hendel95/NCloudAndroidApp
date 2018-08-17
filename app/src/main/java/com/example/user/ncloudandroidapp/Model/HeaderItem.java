@@ -12,11 +12,8 @@ public class HeaderItem extends Item {
     @SerializedName("createdTime")
     private String createdTime;
 
-    @SerializedName("imageSize")
-    private int imageSize;
 
     public HeaderItem(String createdTime){
-
         this.createdTime = createdTime;
     }
 

@@ -2,15 +2,9 @@ package com.example.user.ncloudandroidapp.Adapter;
 
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
-import android.media.ExifInterface;
-import android.net.Uri;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,25 +12,18 @@ import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.user.ncloudandroidapp.LocalDetailedImageActivity;
-import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
 import com.example.user.ncloudandroidapp.R;
 
-import java.io.IOException;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final String TAG = "LocalRecyclerViewAdapter";
@@ -84,7 +71,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == TYPE_HEADER) {
-            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_layout, parent, false);
+            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.header_item, parent, false);
             return new HeaderViewHolder(layoutView);
         } else if (viewType == TYPE_ITEM) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
@@ -124,29 +111,6 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
                 checkBox.setVisibility(View.GONE);
             }
 
-            /*
-            Bitmap bitmap = BitmapFactory.decodeFile(((LocalGalleryItem) item).getThumbnailPath());
-
-            ExifInterface exif = null;
-            try {
-                exif = new ExifInterface(((LocalGalleryItem) item).getPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_UNDEFINED);
-
-            Log.i(TAG, "orientation =" + orientation);
-            Bitmap bmRotated = rotateBitmap(bitmap, orientation);
-
-
-            Glide.with(mContext)
-                    .asBitmap()
-                    .load(bmRotated)
-                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
-                    .into(imageView);
-
-*/
             Glide.with(mContext)
                     .load(((LocalGalleryItem) item).getThumbnailPath())
                     .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
@@ -155,74 +119,6 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         }else if (holder instanceof LoadingViewHolder) {
         }
 
-    }
-    public class RotateTransformation extends BitmapTransformation {
-
-        private float rotateRotationAngle = 0f;
-
-        public RotateTransformation(Context context, float rotateRotationAngle) {
-            //super(context);
-            this.rotateRotationAngle = rotateRotationAngle;
-        }
-
-        @Override
-        protected Bitmap transform(BitmapPool pool, Bitmap toTransform, int outWidth, int outHeight) {
-            Matrix matrix = new Matrix();
-
-            matrix.postRotate(rotateRotationAngle);
-
-            return Bitmap.createBitmap(toTransform, 0, 0, toTransform.getWidth(), toTransform.getHeight(), matrix, true);
-        }
-
-        @Override
-        public void updateDiskCacheKey(MessageDigest messageDigest) {
-            messageDigest.update(("rotate" + rotateRotationAngle).getBytes());
-        }
-    }
-
-
-    public static Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
-
-        Matrix matrix = new Matrix();
-        switch (orientation) {
-            case ExifInterface.ORIENTATION_NORMAL:
-                return bitmap;
-            case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
-                matrix.setScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_180:
-                matrix.setRotate(180);
-                break;
-            case ExifInterface.ORIENTATION_FLIP_VERTICAL:
-                matrix.setRotate(180);
-                matrix.postScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_TRANSPOSE:
-                matrix.setRotate(90);
-                matrix.postScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_90:
-                matrix.setRotate(90);
-                break;
-            case ExifInterface.ORIENTATION_TRANSVERSE:
-                matrix.setRotate(-90);
-                matrix.postScale(-1, 1);
-                break;
-            case ExifInterface.ORIENTATION_ROTATE_270:
-                matrix.setRotate(-90);
-                break;
-            default:
-                return bitmap;
-        }
-        try {
-            Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-            bitmap.recycle();
-            return bmRotated;
-        }
-        catch (OutOfMemoryError e) {
-            e.printStackTrace();
-            return null;
-        }
     }
 
     public void setModeChanged(boolean modeChanged){
@@ -285,8 +181,19 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             if (position != RecyclerView.NO_POSITION) {
                 if(isModeChanged){
                     int adapterPosition = getAdapterPosition();
-                    itemCheckedStates.put(adapterPosition, true);
-                }else {
+                    if(itemCheckedStates.get(adapterPosition) != null){
+                        itemCheckedStates.remove(adapterPosition);
+                        mCheckBox.setChecked(false);
+
+                        Log.d(TAG, "Item Removed" + adapterPosition);
+
+                    }
+                    else {
+                        itemCheckedStates.put(adapterPosition, true);
+                        mCheckBox.setChecked(true);
+                        Log.d(TAG, "Item Checked" + adapterPosition);
+
+                    }                }else {
                     LocalGalleryItem localGalleryItem = (LocalGalleryItem) mItemList.get(position);
                     Intent intent = new Intent(mContext, LocalDetailedImageActivity.class);
                     intent.putExtra("class", TAG);
@@ -307,6 +214,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
     public void add(Item item) {
         mItemList.add(item);
         notifyItemInserted(mItemList.size() - 1);
+        //notifyDataSetChanged();
     }
 
     public void addAll(List<Item> items) {
@@ -361,7 +269,6 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
     public void clearStateArray(){
         itemCheckedStates.clear();
     }
-
 
 
 

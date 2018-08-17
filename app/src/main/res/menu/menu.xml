@@ -1,35 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    >
+    xmlns:app="http://schemas.android.com/apk/res-auto">
     <!-- "Mark Favorite", should appear as action button if possible -->
     <item
         android:id="@+id/action_choose"
-        android:title="check_btn"
-        android:iconTint="@android:color/white"
         android:icon="@drawable/ic_action_check_dark"
-        app:showAsAction="ifRoom"/>
+        android:iconTint="@android:color/white"
+        android:title="check_btn"
+        app:showAsAction="ifRoom" />
 
     <!-- Settings, should always be in the overflow -->
-    <item android:id="@+id/action_settings2"
+    <item
+        android:id="@+id/action_settings1"
         android:title="촬영일 - 최신 항목 우선"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
 
-    <item android:id="@+id/action_settings3"
+    <item
+        android:id="@+id/action_settings2"
         android:title="촬영일 - 오래된 항목 우선"
-        app:showAsAction="never"/>
-    <item android:id="@+id/action_settings4"
-        android:title="업로드일 - 최신 항목 우선"
-        app:showAsAction="never"/>
-    <item android:id="@+id/action_settings5"
-    android:title="업로드일 - 최신 항목 우선"
-    app:showAsAction="never"/>
-    <item android:id="@+id/action_settings6"
-        android:title="이름 - 오름 차순 정렬"
-        app:showAsAction="never"/>
+        app:showAsAction="never" />
 
-    <item android:id="@+id/action_settings7"
-    android:title="이름 - 내림 차순 정렬"
-    app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_settings3"
+        android:title="이름 - 오름 차순 정렬"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/action_settings4"
+        android:title="이름 - 내림 차순 정렬"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings5"
+        android:title="업로드일 - 최신 항목 우선"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_settings6"
+        android:title="업로드일 - 최신 항목 우선"
+        app:showAsAction="never" />
+
 
 </menu>

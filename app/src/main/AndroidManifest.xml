@@ -47,7 +47,17 @@
             -->
         </activity>
         <activity android:name=".LocalDetailedImageActivity" />
-        <activity android:name=".GDriveDetailedImageActivity"></activity>
+        <activity android:name=".GDriveDetailedImageActivity" />
+        <activity android:name=".UploadResultActivity" />
+        <activity android:name=".DownloadResultActivity" />
+        <activity
+            android:name=".NavigationDrawerActivity"
+            android:label="@string/title_activity_navigation_drawer"
+            android:theme="@style/CustomAppTheme" />
+        <activity
+            android:name=".Main2Activity"
+            android:label="@string/title_activity_main2"
+            android:theme="@style/CustomAppTheme"></activity>
     </application>
 
 </manifest>

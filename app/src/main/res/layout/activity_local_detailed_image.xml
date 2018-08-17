@@ -22,15 +22,23 @@
         android:layout_height="match_parent"
         android:layout_alignParentTop="true" />
 
-<!--
-    <android.support.v7.widget.Toolbar
-        android:id="@+id/toolbar_detailed_local_bottom"
+
+    <ProgressBar
+        android:id="@+id/gdrive_progressbar"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/my_gradient2"
-        android:theme="@style/ToolbarTheme"
-        android:layout_alignParentBottom="true" />
+        android:layout_centerVertical="true" />
 
--->
+    <TextView
+        android:id="@+id/progressbar_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/white"
+        android:text="0"
+        android:layout_centerInParent="true"/>
+
+
+
 
 </RelativeLayout>

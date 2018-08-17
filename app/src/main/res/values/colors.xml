@@ -4,4 +4,6 @@
     <color name="colorPrimaryDark">#9575cd</color>
     <color name="colorAccent">#FF4081</color>
     <color name="colorHeader">#EDE7F6</color>
+    <color name="colorUploadHeader">#ededed</color>
+    <color name="colorDecorator">#FFDEDEDE</color>
 </resources>

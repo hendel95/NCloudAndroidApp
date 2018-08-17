@@ -1,6 +1,8 @@
 package com.example.user.ncloudandroidapp;
 
+import android.annotation.SuppressLint;
 import android.content.ContentValues;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -20,6 +22,9 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
+import com.example.user.ncloudandroidapp.Model.Item;
+import com.example.user.ncloudandroidapp.Room.DownloadFile;
+import com.example.user.ncloudandroidapp.Room.FileDatabase;
 import com.github.chrisbanes.photoview.PhotoView;
 
 import java.io.File;
@@ -27,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Date;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -36,10 +42,21 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class GDriveDetailedImageActivity extends AppCompatActivity {
+
+    public static final int OK = 200;
+    public static final int CREATED = 201;
+    public static final int INCOMPLETE = 308;
+    public static final int BAD_REQUEST = 400;
+    public static final int UNAUTHORIZED = 401;
+    public static final int FORBIDDEN = 403;
+    public static final int NOT_FOUND = 404;
+    public static final int GATEWAY_TIMEOUT = 504;
+
     public static final String EXTRA_GDRIVE_PHOTO = "GDriveDetailedImageActivity";
     private static final String TAG = "GDriveDetailedImageActivity";
     private OAuthServerIntf server;
 
+    CustomDateFormat mCustomDateFormat = new CustomDateFormat();
 
     GalleryItem galleryItem;
 
@@ -127,17 +144,24 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
       //  OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getApplication());
         Call<ResponseBody> responseBodyCall = server.downloadFile(galleryItem.getId());
         responseBodyCall.enqueue(new Callback<ResponseBody>() {
+            @SuppressLint("StaticFieldLeak")
             @Override
             public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
-                if (response.code() == 200 && response.body() != null) {
-                    Log.d(TAG, "server contacted and has file");
+                if (response.code() == OK && response.body() != null) {
 
                     new AsyncTask<Void, Void, Void>(){
                         @Override
                         protected Void doInBackground(Void... voids){
                             boolean writtenToDisk = writeResponseBodyToDisk(response.body());
+                            if(writtenToDisk){
 
-                            Log.d(TAG, "file download was a success? " + writtenToDisk);
+                                Date currentDate = new Date();
+                                DownloadFile downloadFile = new DownloadFile(galleryItem.getName(), galleryItem.getThumbnailLink(), mCustomDateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
+                                FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertDownloadFile(downloadFile);
+
+                                Intent intent = new Intent(getApplicationContext(), DownloadResultActivity.class);
+                                startActivity(intent);
+                            }
                             return null;
                         }
                     }.execute();

@@ -70,7 +70,7 @@ public interface OAuthServerIntf {
             @Header("Content-Range") String content_range
     );
 
-
+//////////////////////////////////////////////////
     @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadMultipleFilesDynamic(
@@ -79,14 +79,22 @@ public interface OAuthServerIntf {
             @Part List<MultipartBody.Part> metaPartList
             //@Part List<MultipartBody.Part> mediaPartList
     );
-///////////////////////////////////////////////
+//////////////////////////////////////////////////
 
     /*Multipart Upload*/
+   // @Headers({"Content-Type: application/json; charset=UTF-8"})
     @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadMultipleFiles(
             @Part MultipartBody.Part metaPart,
             @Part MultipartBody.Part mediaPart
+    );
+
+    @Multipart
+    @POST("upload/drive/v3/files?uploadType=multipart")
+    Call<ResponseBody> uploadFile(
+            @Part("description") RequestBody description,
+            @Part MultipartBody.Part dataPart
     );
 
     @Streaming

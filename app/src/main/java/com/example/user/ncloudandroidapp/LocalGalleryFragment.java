@@ -4,43 +4,30 @@ import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBar;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.user.ncloudandroidapp.Adapter.GDriveRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.Adapter.LocalRecyclerViewAdapter;
-import com.example.user.ncloudandroidapp.Model.GalleryItem;
-import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
+import com.example.user.ncloudandroidapp.Room.FileDatabase;
+import com.example.user.ncloudandroidapp.Room.UploadFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,8 +36,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -58,11 +43,9 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
-import okhttp3.internal.http.HttpHeaders;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.http.Header;
 
 
 /**
@@ -79,11 +62,26 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    public final String PARCELABLE_ARRAY_LIST = "UploadResultActivity.INTENT";
+
     public static final int CHUNK_LIMIT = 262144; // = (256*1024)
 
     public static final int OK = 200;
     public static final int CREATED = 201;
     public static final int INCOMPLETE = 308;
+    public static final int BAD_REQUEST = 400;
+    public static final int UNAUTHORIZED = 401;
+    public static final int PAYMENT_REQUIRED = 402;
+    public static final int FORBIDDEN = 403;
+    public static final int NOT_FOUND = 404;
+    public static final int GATEWAY_TIMEOUT = 504;
+
+    private static String ORDER = MediaStore.Images.Media.DATE_TAKEN + " DESC";
+
+    public final int ORDER_CREATED_DESC = 1;
+    public final int ORDER_CREATED_ASC = 2;
+    public final int ORDER_MODEFIED_DESC = 3;
+    public final int ORDER_MODEFIED_ASC = 4;
 
     private static final Integer PAGE_SIZE = 100;
 
@@ -114,8 +112,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
     private Date date = new Date();
     // public static List<Item> sItemList = new ArrayList<>();
 
-    LocalGalleryItem mItem;
-    String fileLength;
+    private static ArrayList<LocalGalleryItem> uploadedItems = new ArrayList<>();
 
     private static final int REQUEST_PERMISSIONS = 100;
     CustomDateFormat dateFormat = new CustomDateFormat();
@@ -132,6 +129,35 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
      * @param param2 Parameter 2.
      * @return A new instance of fragment LocalGalleryFragment.
      */
+
+    public void setOrderByNum(int order){
+        switch (order){
+            case ORDER_CREATED_DESC:
+                setORDER(MediaStore.Images.Media.DATE_TAKEN + " DESC");
+                onRefresh();
+                break;
+
+            case ORDER_CREATED_ASC:
+                setORDER(MediaStore.Images.Media.DATE_TAKEN + " ASC");
+                onRefresh();
+                break;
+
+            case ORDER_MODEFIED_DESC:
+                setORDER(MediaStore.Images.Media.DATE_MODIFIED + " DESC");
+                onRefresh();
+                break;
+
+            case ORDER_MODEFIED_ASC:
+                setORDER(MediaStore.Images.Media.DATE_MODIFIED + " DESC");
+                onRefresh();
+                break;
+        }
+    }
+    public static void setORDER(String ORDER) {
+        LocalGalleryFragment.ORDER = ORDER;
+    }
+
+
     // TODO: Rename and change types and number of parameters
     public static LocalGalleryFragment newInstance(String param1, String param2) {
         LocalGalleryFragment fragment = new LocalGalleryFragment();
@@ -194,11 +220,10 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                //mLocalRecyclerViewAdapter.clear();
+                mLocalRecyclerViewAdapter.clear();
                 mLocalRecyclerViewAdapter.notifyDataSetChanged();
-                permissionCheck();
                 mLocalRecyclerViewAdapter.clearStateArray();
-                //  getImagePath();
+                permissionCheck();
                 //mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
                 mSwipeRefreshLayout.setRefreshing(false);
             }
@@ -231,10 +256,10 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
             }
         } else {
             //사용 권한이 있음을 확인하는 경우
-            Log.e("Else", "Else");
+            Log.e(TAG, "Permission Checked");
             //Toast.makeText(getActivity(), "권한 확인 완료.", Toast.LENGTH_LONG).show();
-
-            getImagePath();
+            getImages();
+            //getImagePath();
 
         }
     }
@@ -270,6 +295,12 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         void onFragmentInteraction(Uri uri);
     }
 
+    public void getImages(){
+        AsyncTask<Void, Integer, List<Item>> asyncTask = new DownloadImageTask();
+        asyncTask.execute();
+
+    }
+
     public List<Item> getImagePath() {
 
 
@@ -287,8 +318,8 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
         String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.MediaColumns.MIME_TYPE, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns._ID};
 
-        final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
-        cursor = getActivity().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
+        //final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+        cursor = getActivity().getContentResolver().query(uri, projection, null, null, ORDER);
 
         column_index_data = cursor.getColumnIndex(projection[0]);
         column_index_date_taken = cursor.getColumnIndex(projection[1]);
@@ -296,8 +327,11 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         column_index_name = cursor.getColumnIndex(projection[3]);
         column_index_image_id = cursor.getColumnIndex(projection[4]);
         if (cursor.getCount() == 0) {
-            mTextView.setText(R.string.empty_file);
-            mTextView.bringToFront();
+           // mTextView.bringToFront();
+            mTextView.setVisibility(View.VISIBLE);
+        }else{
+            mTextView.setVisibility(View.GONE);
+
         }
 
 
@@ -420,7 +454,8 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
                     if (grantResults.length > 0 && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
                         //권한 동의 버튼 선택
-                        getImagePath();
+                        //getImagePath();
+                        getImages();
                     } else {
                         //사용자가 권한 동의를 안함
                         //권한 동의 안함 버튼 선택
@@ -457,12 +492,6 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         }
     };
 
-    protected void loadMoreItems() {
-        isLoading = true;
-        //OAuthServerIntf server = RetrofitBuilder.getOAuthClient(getActivity());
-        // Call<GalleryItems> galleryItemCall = server.getFileDescription(FIELDS, Q, ORDER, PAGE_SIZE, PAGE_TOKEN);
-        // galleryItemCall.enqueue(findNextImagesCallback);
-    }
 
     public void moveToTopOfThePage() {
         gridLayoutManager.scrollToPositionWithOffset(0, 0);
@@ -503,94 +532,22 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
     }
 
-/*
-    protected void resumableUpload(){
-
-        HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
-
-        Iterator<Integer> iterator = itemStates.keySet().iterator();
-
-        //LocalGalleryItem item;
-
-        int key;
-        while (iterator.hasNext()) {
-            key = iterator.next();
-            mItem = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
-
-            File file = new File(mItem.getPath());
-
-            Log.i(TAG + "FILE LENGTH", Long.toString(file.length()));
-           // MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
-
-            //MultipartBody.Part metaPart = MultipartBody.Part.create(RequestBody.create(contentType, content));
-            MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
-
-            String content = "{\"name\": \"" + file.getName() + "\"}";
-
-            RequestBody body = RequestBody.create(MediaType.parse(mItem.getMimeType()), content);
-
-            String contentLength = String.format(Locale.ENGLISH, "%d", content.getBytes().length);
-
-            fileLength = Long.toString(file.length());
-
-            Call<ResponseBody> call = server.resumableUpload(mItem.getMimeType(),fileLength, "application/json; charset=UTF-8" ,contentLength ,body);
-            call.enqueue(new Callback<ResponseBody>() {
-                @Override
-                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-
-                    if(response.code() == OK || response.code() == CREATED) {
-                        Log.i("CALL" + TAG , call.request().toString());
-                        Toast.makeText(getContext(), "Resumable uploading successful!", Toast.LENGTH_SHORT).show();
-
-                        Log.i(TAG, response.toString());
-                        Log.i(TAG, response.headers().toString());
-                        String sessionUri = response.headers().get("x-guploader-uploadid");
-                        putSessionUri(sessionUri, response.headers().get("content-length"));
-                    }
-
-                }
-
-                @Override
-                public void onFailure(Call<ResponseBody> call, Throwable t) {
-
-                }
-            });
-
-        }
-    }*/
-
-
-    protected void putSessionUri(String sessionUri, String content_length) {
-
-        Call<ResponseBody> call = server.sendSessionUri(sessionUri, "image/jpeg", fileLength, "bytes */" + fileLength);
-        call.enqueue(new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Log.i(TAG, response.toString());
-                Log.i(TAG, call.request().toString());
-                Log.i(TAG, response.headers().get("range"));
-            }
-
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-
-            }
-        });
-    }
-
 
     protected void multipleFilesUpload() {
 
 
+        uploadedItems.clear();
+
         HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
 
         Iterator<Integer> iterator = itemStates.keySet().iterator();
-        LocalGalleryItem item;
         int key;
 
         MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
 
         while (iterator.hasNext()) {
+            final LocalGalleryItem item;
+
             key = iterator.next();
 
             item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
@@ -612,8 +569,14 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                 @Override
                 public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                     Toast.makeText(getContext(), "uploading successfully", Toast.LENGTH_SHORT).show();
+
                     Log.i(TAG, response.headers().toString());
-//                Log.i(TAG, response.body().toString());
+                    if(response.isSuccessful()){
+                        uploadedItems.add(item);
+                        Date currentDate = new Date();
+                        UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), dateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
+                        FileDatabase.getDatabase(getContext()).getFileDao().insertUploadFile(uploadFile);
+                    }
                 }
 
                 @Override
@@ -624,41 +587,177 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
         }
 
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                Intent intent = new Intent(getActivity(), UploadResultActivity.class);
+                startActivity(intent);
+            }
+        }, 5000);
+
 
     }
 
 
-/*
+    public class DownloadImageTask extends AsyncTask<Void, Integer, List<Item>> {
 
-    @NonNull
-    private RequestBody createPartFromString(String descriptionString) {
-        return RequestBody.create(
-                okhttp3.MultipartBody.FORM, descriptionString);
+        private Date compareDate = new Date();
+        private Date date = new Date();
+        CustomDateFormat dateFormat = new CustomDateFormat();
+
+        @Override protected void onPreExecute() {
+            mLocalRecyclerViewAdapter.clear();
+
+        }
+
+
+        @Override
+        protected void onPostExecute(List<Item> itemList){
+            mLocalRecyclerViewAdapter.addAll(itemList);
+
+        }
+
+
+        @Override
+        protected List<Item> doInBackground(Void ... voids) {
+            List<Item> sItemList = new ArrayList<>();
+            sItemList.clear();
+            boolean isFirstItem = true;
+            Uri uri;
+            Cursor cursor;
+            int column_index_data, column_index_date_taken, column_index_image_id, column_index_mime_type, column_index_name, column_index_orientation;
+
+            String absolutePathOfImage = null;
+            String image_id = null;
+            uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+
+            String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.MediaColumns.MIME_TYPE, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns._ID};
+
+            final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+            cursor = getActivity().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
+
+            column_index_data = cursor.getColumnIndex(projection[0]);
+            column_index_date_taken = cursor.getColumnIndex(projection[1]);
+            column_index_mime_type = cursor.getColumnIndex(projection[2]);
+            column_index_name = cursor.getColumnIndex(projection[3]);
+            column_index_image_id = cursor.getColumnIndex(projection[4]);
+       /* if (cursor.getCount() == 0) {
+            mTextView.setVisibility(View.VISIBLE);
+        }else{
+            mTextView.setVisibility(View.GONE);
+
+        }*/
+
+
+            while (cursor.moveToNext()) {
+                absolutePathOfImage = cursor.getString(column_index_data);
+
+                LocalGalleryItem obj_model = new LocalGalleryItem();
+                obj_model.setPath(absolutePathOfImage);
+
+                obj_model.setName(cursor.getString(column_index_name));
+
+                image_id = cursor.getString(column_index_image_id);
+                //obj_model.setThumbnailPath(uriToThumbnail(image_id));
+                obj_model.setMimeType(cursor.getString(column_index_mime_type));
+                obj_model.setThumbnailPath(getThumbnailPathForLocalFile(image_id, obj_model.getPath()));
+
+                date.setTime(Long.parseLong(cursor.getString(column_index_date_taken)));
+                obj_model.setDateTakenTime(dateFormat.DateToString(date, Item.GRID_ITEM_TYPE));
+
+
+                if (isFirstItem == true) {
+                    compareDate.setTime(date.getTime());
+                    sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));
+                    isFirstItem = false;
+
+                }
+
+                if (dateFormat.compareTime(compareDate, date) != 0) {
+                    int check = dateFormat.compareTime(compareDate, date);
+                    compareDate.setTime(date.getTime());
+                    sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));
+                }
+
+                sItemList.add(obj_model);
+
+            }
+
+
+            return sItemList;
+        }
+
+
+        String getThumbnailPathForLocalFile(String imageId, String imagePath) {
+            // DATA는 이미지 파일의 스트림 데이터 경로를 나타냅니다.
+            String[] projection = {MediaStore.Images.Thumbnails.DATA};
+            ContentResolver contentResolver = getActivity().getContentResolver();
+
+            // 원본 이미지의 _ID가 매개변수 imageId인 썸네일을 출력
+            Cursor thumbnailCursor = contentResolver.query(
+                    MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, // 썸네일 컨텐트 테이블
+                    projection, // DATA를 출력
+                    MediaStore.Images.Thumbnails.IMAGE_ID + "=?", // IMAGE_ID는 원본 이미지의 _ID를 나타냅니다.
+                    new String[]{imageId},
+                    null);
+
+
+            if (thumbnailCursor == null) {
+                return imageId;
+            } else if (thumbnailCursor.moveToFirst()) { //thumbnailPath가 존재할 때..
+                int thumbnailColumnIndex = thumbnailCursor.getColumnIndex(projection[0]);
+
+                String thumbnailPath = thumbnailCursor.getString(thumbnailColumnIndex);
+                thumbnailCursor.close();
+
+                //원본 사진의 orientation 속성을 가져온다
+                ExifInterface exif = null;
+                try {
+                    exif = new ExifInterface(imagePath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_UNDEFINED);
+
+
+                ExifInterface exifInterface = null;
+                try {
+                    exifInterface = new ExifInterface(thumbnailPath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                //thumbnail image의 orientation 속성을 원래 사진의 orientation과 같게 만들어준다.
+                exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,
+                        String.valueOf(orientation));
+                try {
+                    exifInterface.saveAttributes();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
+                return thumbnailPath;
+            } else {
+                // thumbnailCursor가 비었습니다.
+                // 이는 이미지 파일이 있더라도 썸네일이 존재하지 않을 수 있기 때문입니다.
+                // 보통 이미지가 생성된 지 얼마 되지 않았을 때 그렇습니다.
+                // 썸네일이 존재하지 않을 때에는 아래와 같이 썸네일을 생성하도록 요청합니다
+
+                //return Bitmap
+                MediaStore.Images.Thumbnails.getThumbnail(contentResolver, Long.parseLong(imageId), MediaStore.Images.Thumbnails.MICRO_KIND, null);
+                thumbnailCursor.close();
+                return getThumbnailPathForLocalFile(imageId, imagePath);
+            }
+        }
+
     }
 
-    @NonNull
-    private MultipartBody.Part prepareFilePart(String partName, Uri fileUri) {
-        // https://github.com/iPaulPro/aFileChooser/blob/master/aFileChooser/src/com/ipaulpro/afilechooser/utils/FileUtils.java
-        // use the FileUtils to get the actual file by uri
-        File file = FileUtils.getFile(this, fileUri);
-
-        // create RequestBody instance from file
-        RequestBody requestFile =
-                RequestBody.create(
-                        MediaType.parse(getContentResolver().getType(fileUri)),
-                        file
-                );
-
-        // MultipartBody.Part is used to send also the actual file name
-        return MultipartBody.Part.createFormData(partName, file.getName(), requestFile);
+    public int getCheckCount(){
+        return mLocalRecyclerViewAdapter.getItemStateArray().size();
     }
 
-*/
-/*
-    private RequestBody createPartFromString(String descriptionString) {
-        return RequestBody.create(
-                okhttp3.MultipartBody.FORM, descriptionString);
-    }
-*/
 
 }

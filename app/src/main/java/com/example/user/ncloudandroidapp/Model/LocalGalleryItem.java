@@ -26,8 +26,8 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     private String thumbnailPath;
     @SerializedName("mimeType")
     private String mimeType;
-    @SerializedName("orientation")
-    private String orientation;
+    @SerializedName("uploadTime")
+    private String uploadTime;
 
     //private boolean isChecked;
 
@@ -45,6 +45,7 @@ public class LocalGalleryItem extends Item  implements Parcelable {
         this.dateTakenTime = in.readString();
         this.thumbnailPath = in.readString();
         this.mimeType = in.readString();
+        this.uploadTime = in.readString();
     }
 
     public static final Creator<LocalGalleryItem> CREATOR = new Creator<LocalGalleryItem>() {
@@ -72,5 +73,6 @@ public class LocalGalleryItem extends Item  implements Parcelable {
         dest.writeString(dateTakenTime);
         dest.writeString(thumbnailPath);
         dest.writeString(mimeType);
+        dest.writeString(uploadTime);
     }
 }
