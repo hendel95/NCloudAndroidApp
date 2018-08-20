@@ -1,4 +1,4 @@
 package com.example.user.ncloudandroidapp;
 
-public class OAuthToken {
+public class ItemDecorationAlbumColumns {
 }
