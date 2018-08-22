@@ -2,6 +2,8 @@ package com.example.user.ncloudandroidapp;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -58,40 +60,67 @@ public class ProgressRequestBody extends RequestBody {
         return mFile.length();
     }
 
+
     @Override
     public void writeTo(BufferedSink sink) throws IOException {
         long fileLength = mFile.length();
         FileInputStream in = new FileInputStream(mFile);
-
+        boolean uploadFail = false;
 
         try {
             int read;
             byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
             long uploaded = 0;
             int uploadPercent = 0;
+            int currentUploadPercent = 0;
 
+            Log.i("WRITE TO", mFile.getName() + "start");
             Handler handler = new Handler(Looper.getMainLooper());
             while ((read = in.read(buffer)) != -1) {
                // Log.i("read", Integer.toString(read));
+                if (!isUnMeteredNetWork()) {
+                    uploadFail = true;
+                    break;
+                }
+                uploadPercent = (int) (100 * uploaded / fileLength);
 
-                //uploadPercent = (int)(100 * uploaded / fileLength);
-                //mListener.onProgressUpdate(uploadPercent);
+                if(currentUploadPercent+1 <= uploadPercent) {
+                    mListener.onProgressUpdate(uploadPercent);
+                    //handler.post(new ProgressUpdater(uploaded, fileLength));
+
+                    Log.i("UPLOAD", Integer.toString(uploadPercent));
+                    currentUploadPercent = uploadPercent;
+                }
+
 
                 uploaded += read;
+
                 sink.write(buffer, 0, read);
 
-                //handler.post(new ProgressUpdater(uploaded, fileLength));
                // Log.i("TAG"+"progress", Long.toString(uploaded) + "/" + Long.toString(fileLength) + "=" + Integer.toString(uploadPercent));
             }
         } finally {
-            in.close();
-            mListener.onFinish();
-            Log.i("TAG"+"onfinished", "finished");
 
+            if(uploadFail){
+                in.close();
+                mListener.onError();
+            }else {
+                in.close();
+                mListener.onFinish();
+                Log.i("TAG" + "onfinished", "finished");
+            }
         }
     }
 
 
+    private boolean isUnMeteredNetWork() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnectedOrConnecting()) {
+            return networkInfo.getType() == ConnectivityManager.TYPE_WIFI || networkInfo.getType() == ConnectivityManager.TYPE_WIMAX;
+        }
+        return false;
+    }
 
     private class ProgressUpdater implements Runnable {
         private long mUploaded;

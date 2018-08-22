@@ -11,6 +11,7 @@ package com.example.user.ncloudandroidapp.Adapter;
 
         import com.bumptech.glide.Glide;
         import com.bumptech.glide.request.RequestOptions;
+        import com.example.user.ncloudandroidapp.Model.GalleryItem;
         import com.example.user.ncloudandroidapp.Model.HeaderItem;
         import com.example.user.ncloudandroidapp.Model.Item;
         import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
@@ -92,7 +93,7 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
             ImageView imageView = ((ItemViewHolder) holder).mImageView;
             TextView titleText = ((ItemViewHolder) holder).mTitleText;
             TextView dateText = ((ItemViewHolder) holder).mDateText;
-           // ProgressBar progressBar = ((ItemViewHolder)holder).mProgressBar;
+            ProgressBar progressBar = ((ItemViewHolder)holder).mProgressBar;
 
             Glide.with(mContext)
                     .load(((LocalGalleryItem) mObject).getThumbnailPath())
@@ -101,17 +102,62 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
 
             titleText.setText(((LocalGalleryItem) mObject).getName());
             dateText.setText(((LocalGalleryItem) mObject).getUploadTime());
+
+            switch (((LocalGalleryItem)mObject).getResult()){
+                case Item.DOWNLOAD_SUCCESS:
+                    dateText.setText(((LocalGalleryItem) mObject).getUploadTime());
+                    progressBar.setVisibility(View.GONE);
+                    dateText.setVisibility(View.VISIBLE);
+
+                    break;
+
+                case Item.DOWNLOAD_DUPLICATED:
+                    dateText.setText(R.string.duplicated_file_name);
+                    progressBar.setVisibility(View.GONE);
+                    dateText.setVisibility(View.VISIBLE);
+
+                    break;
+
+                case Item.DOWNLOAD_FAILED:
+                    dateText.setText(R.string.download_failed);
+                    progressBar.setVisibility(View.GONE);
+                    dateText.setVisibility(View.VISIBLE);
+                    break;
+
+                default:
+                    progressBar.setProgress(((LocalGalleryItem)mObject).getProgress());
+                    //dateText.setText("파일 다운로드 중입니다");
+                    break;
+            }
             //progressBar.setProgress(((LocalGalleryItem)mObject).getProgress());
 
         }
 
     }
 
-    public void progressUpdate(int updatePosition, int percentage) {
+
+
+
+    public void setProgressUpdate(int updatePosition, int percentage) {
         LocalGalleryItem item = (LocalGalleryItem)itemObjects.get(updatePosition);
-       // item.setProgress(percentage);
-        notifyItemChanged(updatePosition);
+        item.setProgress(percentage);
+        itemObjects.set(updatePosition, item);
+        //notifyItemChanged(updatePosition);
     }
+
+    public void setItemResult(int position, LocalGalleryItem item){
+
+        itemObjects.set(position,item);
+        notifyItemChanged(position);
+
+    }
+
+
+    public int getItemPosition(Item item){
+        int position = itemObjects.indexOf(item);
+        return position;
+    }
+
 
     public Item getItem(int position) {
         return itemObjects.get(position);
@@ -160,8 +206,8 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
         @BindView(R.id.room_result_date_text)
         TextView mDateText;
 
-        //@BindView(R.id.room_result_progressbar)
-        //ProgressBar mProgressBar;
+        @BindView(R.id.room_result_progressbar)
+        ProgressBar mProgressBar;
 
         public ItemViewHolder(final View itemView) {
             super(itemView);

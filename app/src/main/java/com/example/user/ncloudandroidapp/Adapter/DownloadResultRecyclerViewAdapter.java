@@ -89,7 +89,7 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
             ImageView imageView = ((ItemViewHolder) holder).mImageView;
             TextView titleText = ((ItemViewHolder) holder).mTitleText;
             TextView dateText = ((ItemViewHolder) holder).mDateText;
-          //  ProgressBar progressBar = ((ItemViewHolder)holder).mProgressBar;
+            ProgressBar progressBar = ((ItemViewHolder)holder).mProgressBar;
 
             Glide.with(mContext)
                     .load(((GalleryItem) mObject).getThumbnailLink())
@@ -101,21 +101,48 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
             switch (((GalleryItem)mObject).getResult()){
                 case Item.DOWNLOAD_SUCCESS:
                     dateText.setText(((GalleryItem) mObject).getDownloadTime());
+                    progressBar.setVisibility(View.GONE);
+                    dateText.setVisibility(View.VISIBLE);
+
                     break;
 
                 case Item.DOWNLOAD_DUPLICATED:
                     dateText.setText(R.string.duplicated_file_name);
+                    progressBar.setVisibility(View.GONE);
+                    dateText.setVisibility(View.VISIBLE);
+
                     break;
 
                 case Item.DOWNLOAD_FAILED:
                     dateText.setText(R.string.download_failed);
+                    progressBar.setVisibility(View.GONE);
+                    dateText.setVisibility(View.VISIBLE);
+                    break;
+
+                default:
+                    progressBar.setProgress(((GalleryItem)mObject).getProgress());
+                    //dateText.setText("파일 다운로드 중입니다");
+                    break;
             }
 
         }
 
     }
 
+    public void setProgressUpdate(int position, int percentage){
+        GalleryItem galleryItem = (GalleryItem)itemObjects.get(position);
+        galleryItem.setProgress(percentage);
+        itemObjects.set(position, galleryItem);
+        notifyItemChanged(position);
 
+    }
+
+    public void setItemResult(int position, GalleryItem item){
+
+        itemObjects.set(position,item);
+        notifyItemChanged(position);
+
+    }
 
     public Item getItem(int position) {
         return itemObjects.get(position);
@@ -165,8 +192,8 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
         @BindView(R.id.room_result_date_text)
         TextView mDateText;
 
-       // @BindView(R.id.room_result_progressbar)
-       // ProgressBar mProgressBar;
+        @BindView(R.id.room_result_progressbar)
+        ProgressBar mProgressBar;
 
         public ItemViewHolder(final View itemView) {
             super(itemView);
@@ -226,6 +253,11 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
             itemObjects.remove(position);
             notifyItemRemoved(position);
         }
+    }
+
+    public int getItemPosition(Item item){
+        int position = itemObjects.indexOf(item);
+        return position;
     }
 
     public void removeFooter() {

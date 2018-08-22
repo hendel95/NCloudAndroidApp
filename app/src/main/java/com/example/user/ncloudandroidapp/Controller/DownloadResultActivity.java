@@ -16,6 +16,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -72,10 +73,10 @@ public class DownloadResultActivity extends AppCompatActivity {
     }
 
     @BindView(R.id.nav_remove_all_download)
-    TextView mTextView;
+    Button mButton;
 
     @OnClick(R.id.nav_remove_all_download)
-    public void removeButtonClick() {
+    public void onDeleteButtonClick() {
         dialogBuilderDeleteAllFiles();
 
     }
@@ -126,9 +127,11 @@ public class DownloadResultActivity extends AppCompatActivity {
                 download(item);
             }
             mItemArrayList.clear();
+        }else{
+            loadFilesFromDatabase();
         }
 
-        loadFilesFromDatabase();
+        //loadFilesFromDatabase();
 
     }
 
@@ -283,20 +286,10 @@ public class DownloadResultActivity extends AppCompatActivity {
             public void onResponse(Call<ResponseBody> call, final Response<ResponseBody> response) {
                 if (response.code() == OK && response.body() != null) {
 
-                    new AsyncTask<Void, Void, Integer>() {
+                    new AsyncTask<Void, Integer, Integer>() {
                         @Override
                         protected void onPreExecute() {
-
-                            super.onPreExecute();
-                        }
-
-                        @Override
-                        protected void onPostExecute(Integer result) {
-
-                            //Date currentDate = new Date();
-                            DownloadFile downloadFile = new DownloadFile(galleryItem.getName(), galleryItem.getThumbnailLink(), mCustomDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), result);
-                            FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertDownloadFile(downloadFile);
-                            // mDownloadResultRecyclerViewAdapter.add(downloadFile);
+                            mDownloadResultRecyclerViewAdapter.add(galleryItem);
 
                             //addFileToList(downloadFile);
                             mDownloadResultRecyclerViewAdapter.notifyDataSetChanged();
@@ -304,10 +297,124 @@ public class DownloadResultActivity extends AppCompatActivity {
                         }
 
                         @Override
+                        protected void onPostExecute(Integer result) {
+
+                            DownloadFile downloadFile = new DownloadFile(galleryItem.getName(), galleryItem.getThumbnailLink(), mCustomDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), result);
+                            FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertDownloadFile(downloadFile);
+                            GalleryItem item = new GalleryItem();
+                            item = galleryItem;
+                            item.setResult(result);
+                            item.setDownloadTime(mCustomDateFormat.dateFormatting(downloadFile.getDate(),Item.ROOM_ITEM_TYPE));
+                            int position = mDownloadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                            mDownloadResultRecyclerViewAdapter.setItemResult(position, item);
+                            //mDownloadResultRecyclerViewAdapter.notifyDataSetChanged();
+
+                            //Date currentDate = new Date();
+                            /*DownloadFile downloadFile = new DownloadFile(galleryItem.getName(), galleryItem.getThumbnailLink(), mCustomDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), result);
+                            FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertDownloadFile(downloadFile);
+
+                            mDownloadResultRecyclerViewAdapter.add(galleryItem);
+
+                            //addFileToList(downloadFile);
+                            mDownloadResultRecyclerViewAdapter.notifyDataSetChanged();*/
+
+
+                        }
+
+                        @Override
+                        protected void onProgressUpdate(Integer... values) {
+                            super.onProgressUpdate(values[0]);
+                            int position = mDownloadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                            mDownloadResultRecyclerViewAdapter.setProgressUpdate(position, values[0]);
+
+                        }
+
+                        @Override
                         protected Integer doInBackground(Void... voids) {
 
-                            int writtenToDisk = writeResponseBodyToDisk(response.body(), galleryItem);
-                            return writtenToDisk;
+                            //int writtenToDisk = writeResponseBodyToDisk(response.body(), galleryItem);
+                            //return writtenToDisk;
+                            ResponseBody body = response.body();
+                            try {
+                                //새로운 Directory 생성
+                                String file_url = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES) + File.separator + "GDRIVE";
+
+
+                                File dir = new File(file_url);
+                                //directory 없으면 생성
+                                if (!dir.exists()) {
+                                    dir.mkdirs();
+                                }
+
+                                String fileName = galleryItem.getName();
+
+
+                                String localPath = file_url + File.separator + fileName;
+
+                                //Local Path에 파일 생성
+
+                                File downloadFile = new File(localPath);
+
+                                if (downloadFile.exists()) {
+
+                                    return Item.DOWNLOAD_DUPLICATED;
+                                }
+
+                                InputStream inputStream = null;
+                                OutputStream outputStream = null;
+
+                                try {
+                                    byte[] fileReader = new byte[4096];
+
+                                    long fileSize = body.contentLength();
+                                    long fileSizeDownloaded = 0;
+
+                                    inputStream = body.byteStream();
+                                    outputStream = new FileOutputStream(downloadFile);
+                                    int percentage = 0;
+                                    while (true) {
+                                        int read = inputStream.read(fileReader);
+
+                                        if (read == -1) {
+                                            break;
+                                        }
+                                        percentage = (int)(fileSizeDownloaded * 100/fileSize);
+                                        publishProgress(percentage);
+                                        outputStream.write(fileReader, 0, read);
+
+                                        fileSizeDownloaded += read;
+
+
+                                        Log.d(TAG, "file download: " + fileSizeDownloaded + " of " + fileSize);
+                                    }
+
+
+                                    ContentValues values = new ContentValues();
+                                    values.put(MediaStore.Images.Media.DATA,
+                                            downloadFile.getAbsolutePath());
+                                    values.put(MediaStore.Images.Media.MIME_TYPE, galleryItem.getMimeType());
+                                    // values.put(MediaStore.Images.ImageColumns.ORIENTATION, galleryItem.getOrientation());
+                                    //values.put(MediaStore.Images.Media.DATE_ADDED, galleryItem.getCreatedTime());
+                                    getContentResolver().insert(
+                                            MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+                                    outputStream.flush();
+
+                                    return Item.DOWNLOAD_SUCCESS;
+                                } catch (IOException e) {
+                                    return Item.DOWNLOAD_FAILED;
+                                } finally {
+                                    if (inputStream != null) {
+                                        inputStream.close();
+                                    }
+
+                                    if (outputStream != null) {
+                                        outputStream.close();
+                                    }
+                                }
+                            } catch (IOException e) {
+                                return Item.DOWNLOAD_FAILED;
+                            }
                         }
 
                     }.execute();
@@ -375,6 +482,7 @@ public class DownloadResultActivity extends AppCompatActivity {
                     outputStream.write(fileReader, 0, read);
 
                     fileSizeDownloaded += read;
+
 
                     Log.d(TAG, "file download: " + fileSizeDownloaded + " of " + fileSize);
                 }

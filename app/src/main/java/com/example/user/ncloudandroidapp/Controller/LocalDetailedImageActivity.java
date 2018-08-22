@@ -235,12 +235,14 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
 
     private void upload(){
         List<LocalGalleryItem> listItem = new ArrayList<>();
+        localGalleryItem.setResult(Item.DOWNLOAD_BEFORE);
         listItem.add(localGalleryItem);
+
         Intent intent = new Intent(getApplicationContext(), UploadResultActivity.class);
         intent.putParcelableArrayListExtra("UPLOAD_LIST", (ArrayList<? extends Parcelable>) listItem);
         startActivity(intent);
     }
-
+/*
     private void uploadWithProgressBar(){
         File file = new File(localGalleryItem.getPath());
 
@@ -302,7 +304,7 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
 
 
 
-    }
+    }*/
 /*
     private void upload() {
 

@@ -13,12 +13,14 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Adapter.UploadResultRecyclerViewAdapter;
 import com.example.user.ncloudandroidapp.CustomDateFormat;
+import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
@@ -38,6 +40,7 @@ import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -55,7 +58,13 @@ public class UploadResultActivity extends AppCompatActivity {
     ImageButton mImageButton;
 
     @BindView(R.id.nav_remove_all_upload)
-    TextView mTextView;
+    Button mButton;
+
+    @OnClick(R.id.nav_remove_all_upload)
+    public void onDeleteButtonClick() {
+        dialogBuilderDeleteAllFiles();
+
+    }
 
     OAuthHelper mOAuthHelper;
 
@@ -68,10 +77,10 @@ public class UploadResultActivity extends AppCompatActivity {
     public static final int QUERY_FINISH = 304;
     public static final int UPLOAD_SUCCESS = 701;
 
-    private final String TAG = getClass().getSimpleName();
+    private final String TAG = "UploadResultActivity";
 
-    private Handler mainThreadHandler;
-    private UploadHandlerThread handlerThread;
+   // private Handler mainThreadHandler;
+   // private UploadHandlerThread handlerThread;
 
     List<Item> mItemArrayList = new ArrayList<>();
     List<UploadFile> uploadFileListDatabase;
@@ -80,6 +89,9 @@ public class UploadResultActivity extends AppCompatActivity {
     OAuthServerIntf server;
 
     CustomDateFormat mDateFormat = new CustomDateFormat();
+
+    Date currentDate;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,14 +124,7 @@ public class UploadResultActivity extends AppCompatActivity {
                 finish();
             }
         });
-        mTextView.setOnClickListener(
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        dialogBuilderDeleteAllFiles();
-                    }
-                }
-        );
+
 
         //activity 에서 실행된 것.
 
@@ -127,34 +132,21 @@ public class UploadResultActivity extends AppCompatActivity {
 
 
         if (uploadRequestList != null) {
-            UploadImages();
-        }
+            currentDate = new Date();
+            Toast.makeText(getApplicationContext(), "사진 업로드 중입니다.", Toast.LENGTH_SHORT).show();
 
-        uploadFileListDatabase = FileDatabase.getDatabase(getApplicationContext()).getFileDao().getAllUploadedFiles();
-
-        if (!uploadFileListDatabase.isEmpty()) {
-
-            mItemArrayList.clear();
-            mUploadResultRecyclerViewAdapter.clear();
-            String tempDate = uploadFileListDatabase.get(0).getMDate();
-
-            mItemArrayList.add(new HeaderItem(tempDate));
-
-            for (UploadFile uploadFile : uploadFileListDatabase) {
-                LocalGalleryItem item = new LocalGalleryItem();
-                item.setThumbnailPath(uploadFile.getMThumbnailPath());
-                item.setName(uploadFile.getMName());
-                if (!tempDate.equals(uploadFile.getMDate())) {
-                    mItemArrayList.add(new HeaderItem(uploadFile.getMDate()));
-                    tempDate = uploadFile.getMDate();
-                }
-                item.setUploadTime(uploadFile.getMDate());
-                mItemArrayList.add(item);
+            for (LocalGalleryItem item : uploadRequestList) {
+                mUploadResultRecyclerViewAdapter.add(item);
+                mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
+                executeUpload(item);
             }
+            mItemArrayList.clear();
 
-            mUploadResultRecyclerViewAdapter.addAll(mItemArrayList);
-
+        } else {
+            loadFilesFromDatabase();
         }
+
+
 
 
        /* mainThreadHandler = new UploadActivityHandler(this);
@@ -200,39 +192,33 @@ public class UploadResultActivity extends AppCompatActivity {
     }
 
 
-    public void UploadImages() {
+    public void loadFilesFromDatabase() {
+        uploadFileListDatabase = FileDatabase.getDatabase(getApplicationContext()).getFileDao().getAllUploadedFiles();
 
-        for (LocalGalleryItem item : uploadRequestList) {
-            executeUpload(item);
-        }
+        if (!uploadFileListDatabase.isEmpty()) {
 
+            mItemArrayList.clear();
+            mUploadResultRecyclerViewAdapter.clear();
+            String tempDate = uploadFileListDatabase.get(0).getMDate();
 
-       /* AsyncTask<Void, Void,Void> asyncTask = new UploadImageTask();
-        asyncTask.execute();*/
+            mItemArrayList.add(new HeaderItem(mDateFormat.dateFormatting(tempDate, Item.ROOM_ITEM_TYPE)));
 
-    }
-
-    public class UploadImageTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-
-            for (LocalGalleryItem item : uploadRequestList) {
-                executeUpload(item);
+            for (UploadFile uploadFile : uploadFileListDatabase) {
+                LocalGalleryItem item = new LocalGalleryItem();
+                item.setThumbnailPath(uploadFile.getMThumbnailPath());
+                item.setName(uploadFile.getMName());
+                item.setResult(uploadFile.getMResult());
+                Log.e(TAG+"THIS", mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                if (!tempDate.equals(uploadFile.getMDate())) {
+                    mItemArrayList.add(new HeaderItem(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE)));
+                    tempDate = uploadFile.getMDate();
+                }
+                item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                mItemArrayList.add(item);
             }
-            return null;
-        }
 
-        @Override
-        protected void onPostExecute(Void v) {
-            Log.i(TAG, "onPostExecute");
-            mUploadResultRecyclerViewAdapter.clearStateArray();
-            createUploadList();
+            mUploadResultRecyclerViewAdapter.addAll(mItemArrayList);
+
         }
     }
 
@@ -274,243 +260,127 @@ public class UploadResultActivity extends AppCompatActivity {
 
     }
 
+    /*
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case READY:
+                    handlerThread.sendQueryRequest();
+                    break;
+                case QUERY_FINISH:
+                    //DateFormat dateFormat = new SimpleDateFormat("yyyy. MM. dd HH:mm", Locale.KOREA);
+                    //for (DriveFile file : downloadRequestList) {
+                    //    downloadItemList.add(0, new DownloadItem(file.getName(), dateFormat.format(new Date()), file.getThumbnailLink(), 0, file.getWidth(), file.getHeight()));
+                   // }
+                   // adapter.notifyDataSetChanged();
 
-    public void handleMessage(Message msg) {
-        switch (msg.what) {
-            case READY:
-                handlerThread.sendQueryRequest();
-                break;
-            case QUERY_FINISH:
-                /*DateFormat dateFormat = new SimpleDateFormat("yyyy. MM. dd HH:mm", Locale.KOREA);
-                for (DriveFile file : downloadRequestList) {
-                    downloadItemList.add(0, new DownloadItem(file.getName(), dateFormat.format(new Date()), file.getThumbnailLink(), 0, file.getWidth(), file.getHeight()));
-                }
-                adapter.notifyDataSetChanged();*/
-
-                for (LocalGalleryItem item : uploadRequestList) {
-                    mItemArrayList.add(item);
-                }
-                mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
-                createUploadRequest();
-                break;
-            case PROGRESS_UPDATE:
-                int position = (int) msg.obj;
-                mUploadResultRecyclerViewAdapter.progressUpdate(position, msg.arg1);
-                break;
-        }
-    }
-
-    private void createUploadRequest() {
-        for (LocalGalleryItem localGalleryItem : uploadRequestList) {
-            handlerThread.sendUploadRequest(localGalleryItem);
-        }
-    }
-
-    class UploadHandlerThread extends HandlerThread {
-        private Handler handler;
-
-        public UploadHandlerThread(String name) {
-            super(name);
-        }
-
-        @Override
-        protected void onLooperPrepared() {
-            handler = new Handler(getLooper()) {
-                @Override
-                public void handleMessage(Message msg) {
-                    //LocalGalleryItem file;
-                    switch (msg.what) {
-                        case QUERY:
-                            createUploadList();
-                            break;
-                        case UPLOAD_REQUEST:
-                            LocalGalleryItem file = (LocalGalleryItem) msg.obj;
-                            executeUpload(file);
-                            break;
-                        case UPLOAD_SUCCESS:
-                            mainThreadHandler.sendEmptyMessage(UPLOAD_SUCCESS);
-                            //file = (LocalGalleryItem) msg.obj;
-                            //file.setStatus("UPLOADED");
-                            //appDatabase.fileDAO().updateFileStatus(status);
-                            break;
-
+                    for (LocalGalleryItem item : uploadRequestList) {
+                        mItemArrayList.add(item);
                     }
-                }
-            };
-            Message message = handler.obtainMessage(READY);
-            mainThreadHandler.sendMessageAtFrontOfQueue(message);
-        }
-
-        public void sendUploadRequest(LocalGalleryItem localGalleryItem) {
-            Message message = handler.obtainMessage(UPLOAD_REQUEST, localGalleryItem);
-            handler.sendMessage(message);
-        }
-
-
-        public void sendQueryRequest() {
-            Message message = handler.obtainMessage(QUERY);
-            handler.sendMessageAtFrontOfQueue(message);
-        }
-
-        private MultipartBody.Part prepareFilePart(final File file, String mimeType, final int updateItemPosition) {
-            final ProgressRequestBody fileBody = new ProgressRequestBody(getApplicationContext(), file, mimeType, new ProgressRequestBody.UploadCallbacks() {
-                @Override
-                public void onProgressUpdate(int percentage) {
-
-                    Message message = mainThreadHandler.obtainMessage(PROGRESS_UPDATE, updateItemPosition);
-                    message.arg1 = percentage;
-                    mainThreadHandler.sendMessage(message);
-                    //mProgressBar.setProgress(percentage);
-//                mTextView.setText(Integer.toString(percentage));
-                    //Log.i("TAG"+"progress", Integer.toString(percentage));
-                }
-
-                @Override
-                public void onError() {
-
-                }
-
-                @Override
-                public void onFinish() {
-                    //Log.i("TAG"+"finished", "finished");
-                    //mProgressBar.setProgress(100);
-
-                    //Message message = handler.obtainMessage(UPLOAD_SUCCESS, file.getAbsolutePath());
-                    //handler.sendMessageAtFrontOfQueue(message);
-//                mTextView.setText("100");
-                }
-            });
-
-            return MultipartBody.Part.createFormData("data", file.getName(), fileBody);
-        }
-
-
-        protected void executeUpload(LocalGalleryItem galleryItem) {
-
-            int updateItemPosition = uploadRequestList.indexOf(galleryItem);
-
-            final LocalGalleryItem item = galleryItem;
-            File file = new File(item.getPath());
-
-            String content = "{\"name\": \"" + file.getName() + "\"}";
-            MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
-
-            RequestBody propertyBody = RequestBody.create(contentType, content);
-
-            String mimeType = item.getMimeType();
-
-            final MultipartBody.Part dataPart = prepareFilePart(file, mimeType, updateItemPosition);
-
-
-            Call<ResponseBody> call = server.uploadFile(propertyBody, dataPart);
-            Log.i(TAG, call.request().toString());
-
-            call.enqueue(new Callback<ResponseBody>() {
-                @Override
-                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                    //Toast.makeText(getApplicationContext(), "uploading successfully", Toast.LENGTH_SHORT).show();
                     mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
-
-                    Log.i(TAG, response.headers().toString());
-                    if (response.isSuccessful()) {
-                        //  uploadedItems.add(item);
-                        Log.i("Uploaded", response.body().toString());
-                        Date currentDate = new Date();
-                        UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
-                        FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
-
-                    }
-                }
-
-                @Override
-                public void onFailure(Call<ResponseBody> call, Throwable t) {
-
-                }
-            });
-
-
+                    createUploadRequest();
+                    break;
+                case PROGRESS_UPDATE:
+                    int position = (int) msg.obj;
+                    mUploadResultRecyclerViewAdapter.progressUpdate(position, msg.arg1);
+                    break;
+            }
         }
 
+        private void createUploadRequest() {
+            for (LocalGalleryItem localGalleryItem : uploadRequestList) {
+                handlerThread.sendUploadRequest(localGalleryItem);
+            }
+        }
 
-        private void createUploadList() {
+        class UploadHandlerThread extends HandlerThread {
+            private Handler handler;
 
-
-            uploadFileListDatabase = FileDatabase.getDatabase(getApplicationContext()).getFileDao().getAllUploadedFiles();
-
-            if (!uploadFileListDatabase.isEmpty()) {
-
-
-                String tempDate = uploadFileListDatabase.get(0).getMDate();
-
-                mItemArrayList.add(new HeaderItem(tempDate));
-
-                for (UploadFile uploadFile : uploadFileListDatabase) {
-                    LocalGalleryItem item = new LocalGalleryItem();
-                    item.setThumbnailPath(uploadFile.getMThumbnailPath());
-                    item.setName(uploadFile.getMName());
-                    if (!tempDate.equals(uploadFile.getMDate())) {
-                        mItemArrayList.add(new HeaderItem(uploadFile.getMDate()));
-                        tempDate = uploadFile.getMDate();
-                    }
-                    item.setUploadTime(uploadFile.getMDate());
-                    mItemArrayList.add(item);
-                }
-
-                mUploadResultRecyclerViewAdapter.addAll(mItemArrayList);
-
+            public UploadHandlerThread(String name) {
+                super(name);
             }
 
-            mainThreadHandler.sendEmptyMessage(QUERY_FINISH);
+            @Override
+            protected void onLooperPrepared() {
+                handler = new Handler(getLooper()) {
+                    @Override
+                    public void handleMessage(Message msg) {
+                        //LocalGalleryItem file;
+                        switch (msg.what) {
+                            case QUERY:
+                                createUploadList();
+                                break;
+                            case UPLOAD_REQUEST:
+                                LocalGalleryItem file = (LocalGalleryItem) msg.obj;
+                                executeUpload(file);
+                                break;
+                            case UPLOAD_SUCCESS:
+                                mainThreadHandler.sendEmptyMessage(UPLOAD_SUCCESS);
+                                //file = (LocalGalleryItem) msg.obj;
+                                //file.setStatus("UPLOADED");
+                                //appDatabase.fileDAO().updateFileStatus(status);
+                                break;
+
+                        }
+                    }
+                };
+                Message message = handler.obtainMessage(READY);
+                mainThreadHandler.sendMessageAtFrontOfQueue(message);
+            }
+
+            public void sendUploadRequest(LocalGalleryItem localGalleryItem) {
+                Message message = handler.obtainMessage(UPLOAD_REQUEST, localGalleryItem);
+                handler.sendMessage(message);
+            }
 
 
-        }
+            public void sendQueryRequest() {
+                Message message = handler.obtainMessage(QUERY);
+                handler.sendMessageAtFrontOfQueue(message);
+            }
 
 
-    }
-
-
-    public class UploadActivityHandler extends Handler {
-
-        private final WeakReference<UploadResultActivity> activityWeakReference;
-
-        public UploadActivityHandler(UploadResultActivity activity) {
-            activityWeakReference = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            UploadResultActivity activity = activityWeakReference.get();
-            activity.handleMessage(msg);
-        }
-    }
-
-
-    private MultipartBody.Part prepareFilePart(final File file, String mimeType, final int updateItemPosition) {
+    */
+    private MultipartBody.Part prepareFilePart(final File file, String mimeType, final int updateItemPosition, final LocalGalleryItem item, final LocalGalleryItem galleryItem) {
         final ProgressRequestBody fileBody = new ProgressRequestBody(getApplicationContext(), file, mimeType, new ProgressRequestBody.UploadCallbacks() {
             @Override
             public void onProgressUpdate(int percentage) {
 
-//                Message message = mainThreadHandler.obtainMessage(PROGRESS_UPDATE, updateItemPosition);
-//                message.arg1 = percentage;
-//                mainThreadHandler.sendMessage(message);
+                   /* Message message = mainThreadHandler.obtainMessage(PROGRESS_UPDATE, updateItemPosition);
+                    message.arg1 = percentage;
+                    mainThreadHandler.sendMessage(message);*/
+            //
+                //    mUploadResultRecyclerViewAdapter.setProgressUpdate(updateItemPosition, percentage);
                 //mProgressBar.setProgress(percentage);
+
+
 //                mTextView.setText(Integer.toString(percentage));
                 //Log.i("TAG"+"progress", Integer.toString(percentage));
             }
 
             @Override
             public void onError() {
+                UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), Item.DOWNLOAD_FAILED);
+                FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
 
+                LocalGalleryItem item = new LocalGalleryItem();
+                item = galleryItem;
+                item.setResult(Item.DOWNLOAD_FAILED);
+                item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                //int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                mUploadResultRecyclerViewAdapter.setItemResult(updateItemPosition, item);
             }
 
-            @Override
+             @Override
             public void onFinish() {
-                //Log.i("TAG"+"finished", "finished");
-                //mProgressBar.setProgress(100);
+                UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), Item.DOWNLOAD_SUCCESS);
+                FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
 
-                //Message message = handler.obtainMessage(UPLOAD_SUCCESS, file.getAbsolutePath());
-                //handler.sendMessageAtFrontOfQueue(message);
-//                mTextView.setText("100");
+                LocalGalleryItem item = new LocalGalleryItem();
+                item = galleryItem;
+                item.setResult(Item.DOWNLOAD_SUCCESS);
+                item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                //int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                mUploadResultRecyclerViewAdapter.setItemResult(updateItemPosition, item);
             }
         });
 
@@ -518,7 +388,7 @@ public class UploadResultActivity extends AppCompatActivity {
     }
 
 
-    protected void executeUpload(LocalGalleryItem galleryItem) {
+    protected void executeUpload(final LocalGalleryItem galleryItem) {
 
         int updateItemPosition = uploadRequestList.indexOf(galleryItem);
 
@@ -532,8 +402,7 @@ public class UploadResultActivity extends AppCompatActivity {
 
         String mimeType = item.getMimeType();
 
-        final MultipartBody.Part dataPart = prepareFilePart(file, mimeType, updateItemPosition);
-
+        final MultipartBody.Part dataPart = prepareFilePart(file, mimeType, updateItemPosition, item, galleryItem);
 
         Call<ResponseBody> call = server.uploadFile(propertyBody, dataPart);
         Log.i(TAG, call.request().toString());
@@ -541,21 +410,50 @@ public class UploadResultActivity extends AppCompatActivity {
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                Toast.makeText(getApplicationContext(), "uploading successfully", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(), "uploading successfully", Toast.LENGTH_SHORT).show();
+               // mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
 
                 Log.i(TAG, response.headers().toString());
-                if (response.isSuccessful()) {
+               /* if (response.isSuccessful()) {
                     //  uploadedItems.add(item);
                     Log.i("Uploaded", response.body().toString());
-                    Date currentDate = new Date();
-                    UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
+                    UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), Item.DOWNLOAD_SUCCESS);
                     FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
 
-                }
+                    LocalGalleryItem item = new LocalGalleryItem();
+                    item = galleryItem;
+                    item.setResult(Item.DOWNLOAD_SUCCESS);
+                    item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                    int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                    mUploadResultRecyclerViewAdapter.setItemResult(position, item);
+
+                } else {
+                    UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), Item.DOWNLOAD_FAILED);
+                    FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
+
+                    LocalGalleryItem item = new LocalGalleryItem();
+                    item = galleryItem;
+                    item.setResult(Item.DOWNLOAD_FAILED);
+                    item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                    int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                    mUploadResultRecyclerViewAdapter.setItemResult(position, item);
+
+                }*/
+
+
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
+                UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), mDateFormat.DateToString(currentDate, Item.ROOM_HEADER_TYPE), Item.DOWNLOAD_FAILED);
+                FileDatabase.getDatabase(getApplicationContext()).getFileDao().insertUploadFile(uploadFile);
+
+                LocalGalleryItem item = new LocalGalleryItem();
+                item = galleryItem;
+                item.setResult(Item.DOWNLOAD_FAILED);
+                item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
+                int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
+                mUploadResultRecyclerViewAdapter.setItemResult(position, item);
 
             }
         });
@@ -564,37 +462,25 @@ public class UploadResultActivity extends AppCompatActivity {
     }
 
 
-    private void createUploadList() {
+}
 
+/*
+    public class UploadActivityHandler extends Handler {
 
-        uploadFileListDatabase = FileDatabase.getDatabase(getApplicationContext()).getFileDao().getAllUploadedFiles();
+        private final WeakReference<UploadResultActivity> activityWeakReference;
 
-        if (!uploadFileListDatabase.isEmpty()) {
-
-
-            String tempDate = uploadFileListDatabase.get(0).getMDate();
-
-            mItemArrayList.add(new HeaderItem(tempDate));
-
-            for (UploadFile uploadFile : uploadFileListDatabase) {
-                LocalGalleryItem item = new LocalGalleryItem();
-                item.setThumbnailPath(uploadFile.getMThumbnailPath());
-                item.setName(uploadFile.getMName());
-                if (!tempDate.equals(uploadFile.getMDate())) {
-                    mItemArrayList.add(new HeaderItem(uploadFile.getMDate()));
-                    tempDate = uploadFile.getMDate();
-                }
-                item.setUploadTime(uploadFile.getMDate());
-                mItemArrayList.add(item);
-            }
-
-            mUploadResultRecyclerViewAdapter.addAll(mItemArrayList);
-
+        public UploadActivityHandler(UploadResultActivity activity) {
+            activityWeakReference = new WeakReference<>(activity);
         }
 
-//        mainThreadHandler.sendEmptyMessage(QUERY_FINISH);
+        @Override
+        public void handleMessage(Message msg) {
+            UploadResultActivity activity = activityWeakReference.get();
+            activity.handleMessage(msg);
+        }
+    }*/
 
 
-    }
 
-}
+
+

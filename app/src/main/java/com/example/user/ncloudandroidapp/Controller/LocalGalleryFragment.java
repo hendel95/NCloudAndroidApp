@@ -322,6 +322,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
             key = iterator.next();
 
             item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
+            item.setResult(Item.DOWNLOAD_BEFORE);
             localGalleryItemList.add(item);
 
         }
@@ -468,13 +469,14 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
         List<LocalGalleryItem> localGalleryItemList = new ArrayList<>();
         MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
+        LocalGalleryItem item;
 
         while (iterator.hasNext()) {
-            final LocalGalleryItem item;
 
             key = iterator.next();
 
             item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
+            item.setResult(Item.DOWNLOAD_BEFORE);
             localGalleryItemList.add(item);
            /* File file = new File(item.getPath());
 

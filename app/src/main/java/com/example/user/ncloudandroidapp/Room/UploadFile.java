@@ -24,6 +24,9 @@ public class UploadFile {
     @ColumnInfo(name="date")
     private String mDate;
 
+    @ColumnInfo(name="result")
+    private int mResult;
+
 /*    @ColumnInfo(name="mime_type")
     private String mMimeType;
 
@@ -34,10 +37,11 @@ public class UploadFile {
     private String mPath;
 */
 
-    public UploadFile(String name, String thumbnailPath , String date){
+    public UploadFile(String name, String thumbnailPath , String date, int result){
         setMName(name);
         setMThumbnailPath(thumbnailPath);
         setMDate(date);
+        setMResult(result);
     }
 
 }

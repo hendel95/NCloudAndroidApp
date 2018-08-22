@@ -10,6 +10,7 @@ public abstract class Item {
     public static final int DOWNLOAD_SUCCESS = 100;
     public static final int DOWNLOAD_DUPLICATED = 101;
     public static final int DOWNLOAD_FAILED = 102;
+    public static final int DOWNLOAD_BEFORE = 103;
     public abstract int getItemType();
 
 }

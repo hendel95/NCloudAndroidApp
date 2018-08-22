@@ -258,7 +258,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        }
+        else if(mToolbar.getVisibility() == View.GONE){
+            setVisibility();
+        }
+        else {
             super.onBackPressed();
         }
     }

@@ -86,7 +86,7 @@ public class RetrofitBuilder {
 
 
         HttpLoggingInterceptor httpLogInterceptor=new HttpLoggingInterceptor();
-        httpLogInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        httpLogInterceptor.setLevel(HttpLoggingInterceptor.Level.NONE);
         return new OkHttpClient.Builder()
                 //add a cache
                 .cache(cacheDir)
@@ -115,7 +115,7 @@ public class RetrofitBuilder {
         Cache cacheDir=new Cache(myCacheDir,cacheSize);
         Interceptor oAuthInterceptor=new OAuthInterceptor();
         HttpLoggingInterceptor httpLogInterceptor=new HttpLoggingInterceptor();
-        httpLogInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        httpLogInterceptor.setLevel(HttpLoggingInterceptor.Level.NONE);
         return new OkHttpClient.Builder()
                 .cache(cacheDir)
                 .cookieJar(new JavaNetCookieJar(cookieHandler))
