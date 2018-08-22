@@ -65,12 +65,12 @@ public interface OAuthServerIntf {
     /*Multipart Upload*/
    // @Headers({"Content-Type: application/json; charset=UTF-8"})
 
-  /*  @Multipart
+    @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadMultipleFiles(
             @Part MultipartBody.Part metaPart,
             @Part MultipartBody.Part mediaPart
-    );*/
+    );
 
 
     //upload -> multipart
@@ -80,6 +80,7 @@ public interface OAuthServerIntf {
             @Part("description") RequestBody description,
             @Part MultipartBody.Part dataPart
     );
+
 
 
     //download

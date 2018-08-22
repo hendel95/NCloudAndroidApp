@@ -26,6 +26,8 @@ public class GalleryItem extends Item implements Parcelable {
     private String downloadTime;
     @SerializedName("result")
     private int result;
+    @SerializedName("progress")
+    private int progress;
 
   //  private boolean isChecked;
   //  @SerializedName("imageMediaMetadata/time")

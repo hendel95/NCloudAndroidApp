@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "086f4859609dc06446b2ab7866bd8509",
+    "identityHash": "51f6fd7b8ab34d17b702b388f7401d81",
     "entities": [
       {
         "tableName": "upload_file",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `thumbnail_path` TEXT, `date` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `thumbnail_path` TEXT, `date` TEXT, `result` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "mId",
@@ -31,6 +31,12 @@
             "columnName": "date",
             "affinity": "TEXT",
             "notNull": false
+          },
+          {
+            "fieldPath": "mResult",
+            "columnName": "result",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -89,7 +95,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"086f4859609dc06446b2ab7866bd8509\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"51f6fd7b8ab34d17b702b388f7401d81\")"
     ]
   }
 }

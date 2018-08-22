@@ -179,6 +179,7 @@ public class GDriveDetailedImageActivity extends AppCompatActivity {
 
     private void download(){
         List<GalleryItem> downloadRequestList = new ArrayList<>();
+        galleryItem.setResult(Item.DOWNLOAD_BEFORE);
         downloadRequestList.add(galleryItem);
         Intent intent = new Intent(getApplicationContext(), DownloadResultActivity.class);
         intent.putParcelableArrayListExtra("DOWNLOAD_LIST", (ArrayList<? extends Parcelable>) downloadRequestList);

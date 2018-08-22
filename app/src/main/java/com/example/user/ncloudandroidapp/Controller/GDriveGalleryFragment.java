@@ -440,6 +440,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
 
             int key = iterator.next();
             GalleryItem galleryItem = ((GalleryItem)mAdapter.getItem(key));
+            galleryItem.setResult(Item.DOWNLOAD_BEFORE);
             galleryItemList.add(galleryItem);
 
             /*Call<ResponseBody> responseBodyCall = server.downloadFile(finalGalleryItem.getId());

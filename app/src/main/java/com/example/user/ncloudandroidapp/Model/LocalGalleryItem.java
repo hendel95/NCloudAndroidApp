@@ -29,11 +29,13 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     private String mimeType;
     @SerializedName("uploadTime")
     private String uploadTime;
-
+    @SerializedName("result")
+    private int result;
+    @SerializedName("progress")
+    private int progress;
 
     private long id;
-    private Bitmap thumbnailBitmap;
-    private int progress;
+    //private Bitmap thumbnailBitmap;
     //private boolean isChecked;
 
     public LocalGalleryItem(){
@@ -51,6 +53,7 @@ public class LocalGalleryItem extends Item  implements Parcelable {
         this.thumbnailPath = in.readString();
         this.mimeType = in.readString();
         this.uploadTime = in.readString();
+        this.result = in.readInt();
 
 
     }
@@ -81,6 +84,7 @@ public class LocalGalleryItem extends Item  implements Parcelable {
         dest.writeString(thumbnailPath);
         dest.writeString(mimeType);
         dest.writeString(uploadTime);
+        dest.writeInt(result);
     }
 
 }
