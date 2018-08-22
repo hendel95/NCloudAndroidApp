@@ -1,29 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="50dp"
-    android:background="@color/colorHeader"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@color/colorPrimary"
     >
+
+    <!--<View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="@color/colorPrimaryDark">
+
+    </View>-->
 
     <TextView
         android:id="@+id/headerTitle"
+        android:textColor="@android:color/black"
         android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="8dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:text="This is header item"
-        android:textSize="20sp"
-        android:gravity="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.53" />
+        android:textSize="16dp"
+        android:gravity="center" />
 
-    <ImageView
+  <!--  <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:layout_gravity="bottom"
+        android:background="@color/colorHeader">
+
+    </View>
+-->
+   <!-- <ImageView
         android:layout_width="20sp"
         android:layout_height="20sp"
          android:layout_margin="10dp"
@@ -50,5 +64,5 @@
         app:layout_constraintHorizontal_bias="0.948"
         app:layout_constraintStart_toEndOf="@+id/headerTitle"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.571" />
-</android.support.constraint.ConstraintLayout>
+        app:layout_constraintVertical_bias="0.571" />-->
+</LinearLayout>

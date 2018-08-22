@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/gdrive_fragment"
-    tools:context=".GDriveGalleryFragment">
+    tools:context=".Controller.GDriveGalleryFragment">
 
     <TextView
         android:id="@+id/main_fragment_text"
@@ -19,7 +19,8 @@
     <android.support.v4.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshGdrive"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimary">
 
 
         <android.support.v7.widget.RecyclerView

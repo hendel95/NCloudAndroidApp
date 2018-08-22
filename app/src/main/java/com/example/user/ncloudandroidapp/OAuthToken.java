@@ -89,7 +89,8 @@ public class OAuthToken {
                     //flush token in the SP
                     SharedPreferences.Editor ed = sp.edit();
                     ed.putString(SP_TOKEN_KEY, null);
-                    ed.commit();
+                    //ed.commit();
+                    ed.apply();
                     //rebuild the object according to the SP
                     OAuthToken oauthToken = new OAuthToken();
                     oauthToken.setAccessToken(null);

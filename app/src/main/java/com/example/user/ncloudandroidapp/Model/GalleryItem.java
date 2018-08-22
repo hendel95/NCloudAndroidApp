@@ -24,7 +24,8 @@ public class GalleryItem extends Item implements Parcelable {
     private String createdTime;
     @SerializedName("downloadTime")
     private String downloadTime;
-
+    @SerializedName("result")
+    private int result;
 
   //  private boolean isChecked;
   //  @SerializedName("imageMediaMetadata/time")
@@ -43,6 +44,7 @@ public class GalleryItem extends Item implements Parcelable {
         this.thumbnailLink = in.readString();
         this.createdTime = in.readString();
         this.downloadTime = in.readString();
+        this.result = in.readInt();
   //      this.dateTakenTime = in.readString();
 
     }
@@ -85,6 +87,7 @@ public class GalleryItem extends Item implements Parcelable {
         dest.writeString(thumbnailLink);
         dest.writeString(createdTime);
         dest.writeString(downloadTime);
+        dest.writeInt(result);
     //    dest.writeString(dateTakenTime);
     }
 

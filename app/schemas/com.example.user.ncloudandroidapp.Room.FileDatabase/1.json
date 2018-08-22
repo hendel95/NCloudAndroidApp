@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "9ac08b54299b3f8ae580393e4e91e608",
+    "identityHash": "086f4859609dc06446b2ab7866bd8509",
     "entities": [
       {
         "tableName": "upload_file",
@@ -44,7 +44,7 @@
       },
       {
         "tableName": "download_file",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `thumbnail_path` TEXT, `date` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`mId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `thumbnail_path` TEXT, `date` TEXT, `result` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "mId",
@@ -53,22 +53,28 @@
             "notNull": true
           },
           {
-            "fieldPath": "mName",
+            "fieldPath": "name",
             "columnName": "name",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "mThumbnailPath",
+            "fieldPath": "thumbnailPath",
             "columnName": "thumbnail_path",
             "affinity": "TEXT",
             "notNull": false
           },
           {
-            "fieldPath": "mDate",
+            "fieldPath": "date",
             "columnName": "date",
             "affinity": "TEXT",
             "notNull": false
+          },
+          {
+            "fieldPath": "result",
+            "columnName": "result",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -83,7 +89,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"9ac08b54299b3f8ae580393e4e91e608\")"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, \"086f4859609dc06446b2ab7866bd8509\")"
     ]
   }
 }

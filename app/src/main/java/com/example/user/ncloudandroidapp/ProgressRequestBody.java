@@ -72,18 +72,16 @@ public class ProgressRequestBody extends RequestBody {
 
             Handler handler = new Handler(Looper.getMainLooper());
             while ((read = in.read(buffer)) != -1) {
-                Log.i("read", Integer.toString(read));
+               // Log.i("read", Integer.toString(read));
 
-                uploadPercent = (int)(100 * uploaded / fileLength);
-                mListener.onProgressUpdate(uploadPercent);
+                //uploadPercent = (int)(100 * uploaded / fileLength);
+                //mListener.onProgressUpdate(uploadPercent);
 
                 uploaded += read;
                 sink.write(buffer, 0, read);
 
-
-
-             //   handler.post(new ProgressUpdater(uploaded, fileLength));
-                Log.i("TAG"+"progress", Long.toString(uploaded) + "/" + Long.toString(fileLength) + "=" + Integer.toString(uploadPercent));
+                //handler.post(new ProgressUpdater(uploaded, fileLength));
+               // Log.i("TAG"+"progress", Long.toString(uploaded) + "/" + Long.toString(fileLength) + "=" + Integer.toString(uploadPercent));
             }
         } finally {
             in.close();
@@ -105,7 +103,6 @@ public class ProgressRequestBody extends RequestBody {
 
         @Override
         public void run() {
-
             mListener.onProgressUpdate((int)(100 * mUploaded / mTotal));
         }
     }

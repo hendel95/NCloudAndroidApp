@@ -1,19 +1,16 @@
 package com.example.user.ncloudandroidapp.Adapter;
 
         import android.content.Context;
-        import android.content.Intent;
         import android.support.v7.widget.RecyclerView;
-        import android.util.Log;
         import android.view.LayoutInflater;
         import android.view.View;
         import android.view.ViewGroup;
         import android.widget.ImageView;
+        import android.widget.ProgressBar;
         import android.widget.TextView;
 
         import com.bumptech.glide.Glide;
         import com.bumptech.glide.request.RequestOptions;
-        import com.example.user.ncloudandroidapp.GDriveDetailedImageActivity;
-        import com.example.user.ncloudandroidapp.Model.GalleryItem;
         import com.example.user.ncloudandroidapp.Model.HeaderItem;
         import com.example.user.ncloudandroidapp.Model.Item;
         import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
@@ -88,29 +85,14 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
 
 
         final Item mObject = itemObjects.get(position);
-/*
-        if (holder instanceof HeaderViewHolder) { //header 인 경우 binding
-            ((HeaderViewHolder) holder).headerTitle.setText(((HeaderItem) mObject).getCreatedTime());
 
-        } else if (holder instanceof ItemViewHolder) { //list item 인 경우 binding
-            ImageView imageView = ((ItemViewHolder) holder).mImageView;
-
-            Glide.with(mContext)
-                    .load(((LocalGalleryItem) mObject).getThumbnailPath())
-                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
-                    .into(imageView);
-
-
-        } else if (holder instanceof LoadingViewHolder) {
-            //  ((LoadingViewHolder)holder)
-        }*/
         if (holder instanceof HeaderViewHolder) { //header 인 경우 binding
             ((HeaderViewHolder) holder).mHeaderTitle.setText(((HeaderItem) mObject).getCreatedTime());
         } else if (holder instanceof ItemViewHolder) { //list item 인 경우 binding
             ImageView imageView = ((ItemViewHolder) holder).mImageView;
             TextView titleText = ((ItemViewHolder) holder).mTitleText;
             TextView dateText = ((ItemViewHolder) holder).mDateText;
-
+           // ProgressBar progressBar = ((ItemViewHolder)holder).mProgressBar;
 
             Glide.with(mContext)
                     .load(((LocalGalleryItem) mObject).getThumbnailPath())
@@ -119,12 +101,17 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
 
             titleText.setText(((LocalGalleryItem) mObject).getName());
             dateText.setText(((LocalGalleryItem) mObject).getUploadTime());
+            //progressBar.setProgress(((LocalGalleryItem)mObject).getProgress());
 
         }
 
     }
 
-
+    public void progressUpdate(int updatePosition, int percentage) {
+        LocalGalleryItem item = (LocalGalleryItem)itemObjects.get(updatePosition);
+       // item.setProgress(percentage);
+        notifyItemChanged(updatePosition);
+    }
 
     public Item getItem(int position) {
         return itemObjects.get(position);
@@ -172,6 +159,9 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
 
         @BindView(R.id.room_result_date_text)
         TextView mDateText;
+
+        //@BindView(R.id.room_result_progressbar)
+        //ProgressBar mProgressBar;
 
         public ItemViewHolder(final View itemView) {
             super(itemView);

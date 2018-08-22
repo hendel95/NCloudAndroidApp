@@ -42,10 +42,16 @@ public class CustomDateFormat{
             newTime = s.format(date);
             return newTime;
         }
-        else{
+        else if(type == Item.ROOM_ITEM_TYPE){
             s = new SimpleDateFormat("yyyy년 MM월 dd일 HH:mm", Locale.getDefault());
             newTime = s.format(date);
             return newTime;
+        }
+        else {
+            s = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            newTime = s.format(date);
+            return newTime;
+
         }
 
     }

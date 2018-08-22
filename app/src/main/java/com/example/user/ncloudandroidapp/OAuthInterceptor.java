@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.example.user.ncloudandroidapp.Controller.MainActivity;
+
 import java.io.IOException;
 
 import okhttp3.Interceptor;
@@ -16,7 +18,7 @@ public class OAuthInterceptor implements Interceptor{
     @Override
     public Response intercept(Chain chain) throws IOException {
         //find the token
-        OAuthToken oauthToken=OAuthToken.Factory.create();
+        OAuthToken oauthToken = OAuthToken.Factory.create();
         accessToken=oauthToken.getAccessToken();
         accessTokenType=oauthToken.getTokenType();
         //add it to the request
