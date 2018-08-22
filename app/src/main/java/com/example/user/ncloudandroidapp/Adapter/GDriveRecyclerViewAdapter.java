@@ -15,7 +15,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.user.ncloudandroidapp.GDriveDetailedImageActivity;
+import com.example.user.ncloudandroidapp.Controller.GDriveDetailedImageActivity;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
@@ -119,7 +119,7 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
 
             Glide.with(mContext)
                     .load(((GalleryItem) mObject).getThumbnailLink())
-                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
+                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small).error(R.drawable.error_img))
                     .into(imageView);
 
 
@@ -267,13 +267,22 @@ public class GDriveRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView
         }
     }
 
-    private void remove(Item item) {
+    public void remove(Item item) {
         int position = itemObjects.indexOf(item);
         if (position > -1) {
             itemObjects.remove(position);
             notifyItemRemoved(position);
         }
     }
+
+
+    public void removeItems(List<Item> itemList){
+
+        for(Item item : itemList){
+            remove(item);
+        }
+    }
+
 
     public void removeFooter() {
         isFooterAdded = false;

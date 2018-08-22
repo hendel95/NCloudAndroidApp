@@ -1,28 +1,20 @@
 package com.example.user.ncloudandroidapp;
 
-import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 
 import java.util.List;
-import java.util.Map;
 
-import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import okhttp3.ResponseBody;
 import retrofit2.Call;
-import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.Field;
 import retrofit2.http.FormUrlEncoded;
 import retrofit2.http.GET;
-import retrofit2.http.Header;
-import retrofit2.http.Headers;
 import retrofit2.http.Multipart;
 import retrofit2.http.POST;
-import retrofit2.http.PUT;
 import retrofit2.http.Part;
-import retrofit2.http.PartMap;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 import retrofit2.http.Streaming;
@@ -51,26 +43,15 @@ public interface OAuthServerIntf {
 //            @Field("client_secret")String client_secret, //Is not relevant for Android application
             @Field("grant_type") String grant_type);
 
-    /*Resumable Upload*/
 
-    @POST("upload/drive/v3/files?uploadType=resumable")
-    Call<ResponseBody> resumableUpload(
-            @Header("X-Upload-Content-Type") String x_upload_content_type,
-            @Header("X-Upload-Content-Length") String x_upload_content_length,
-            @Header("Content-Type") String content_type,
-            @Header("Content-Length") String content_length,
-            @Body RequestBody requestBody
+    @GET("auth/drive")
+    Call<ResponseBody> getUserInfo(
+            @Query("fields") String fields
     );
 
-    @PUT("upload/drive/v3/files?uploadType=resumable")
-    Call<ResponseBody> sendSessionUri(
-            @Query("upload_id") String upload_id,
-            @Header("Content-Type") String content_type,
-            @Header("Content-Length") String content_length,
-            @Header("Content-Range") String content_range
-    );
 
-//////////////////////////////////////////////////
+    /*
+
     @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadMultipleFilesDynamic(
@@ -79,17 +60,20 @@ public interface OAuthServerIntf {
             @Part List<MultipartBody.Part> metaPartList
             //@Part List<MultipartBody.Part> mediaPartList
     );
-//////////////////////////////////////////////////
+*/
 
     /*Multipart Upload*/
    // @Headers({"Content-Type: application/json; charset=UTF-8"})
-    @Multipart
+
+  /*  @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadMultipleFiles(
             @Part MultipartBody.Part metaPart,
             @Part MultipartBody.Part mediaPart
-    );
+    );*/
 
+
+    //upload -> multipart
     @Multipart
     @POST("upload/drive/v3/files?uploadType=multipart")
     Call<ResponseBody> uploadFile(
@@ -97,17 +81,21 @@ public interface OAuthServerIntf {
             @Part MultipartBody.Part dataPart
     );
 
+
+    //download
     @Streaming
     @GET("drive/v3/files/{fileId}?alt=media")
     Call<ResponseBody> downloadFile(
             @Path("fileId") String fileId
     );
 
+    //delete
     @DELETE("drive/v3/files/{fileId}")
     Call<ResponseBody> deleteFile(
             @Path("fileId") String fileId
     );
 
+    //get files from gdrive
     @GET("drive/v3/files")
     Call<GalleryItems> getFileDescription(
             @Query("fields") String fields,

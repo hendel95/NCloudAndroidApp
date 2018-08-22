@@ -11,11 +11,12 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.user.ncloudandroidapp.LocalDetailedImageActivity;
+import com.example.user.ncloudandroidapp.Controller.LocalDetailedImageActivity;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
@@ -39,7 +40,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
 
     protected boolean isFooterAdded = false;
 
-   // private SparseBooleanArray itemStateArray = new SparseBooleanArray();
+    // private SparseBooleanArray itemStateArray = new SparseBooleanArray();
     private HashMap<Integer, Boolean> itemCheckedStates = new HashMap<>();
 
 
@@ -77,9 +78,9 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.gallery_item, parent, false);
             return new ItemViewHolder(layoutView);
         } else if (viewType == TYPE_FOOTER) {
-        View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_item, parent, false);
-        return new LoadingViewHolder(layoutView);
-    }
+            View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_item, parent, false);
+            return new LoadingViewHolder(layoutView);
+        }
         throw new RuntimeException("No match for " + viewType + ".");
     }
 
@@ -111,15 +112,18 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
                 checkBox.setVisibility(View.GONE);
             }
 
+
+
             Glide.with(mContext)
                     .load(((LocalGalleryItem) item).getThumbnailPath())
-                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small))
+                    .apply(new RequestOptions().placeholder(R.drawable.loading_img_small).error(R.drawable.error_img))
                     .into(imageView);
 
         }else if (holder instanceof LoadingViewHolder) {
         }
 
     }
+
 
     public void setModeChanged(boolean modeChanged){
         this.isModeChanged = modeChanged;
@@ -155,6 +159,7 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
         public ImageView mPhotoImageView;
         public CheckBox mCheckBox;
 
+
         public ItemViewHolder(View itemView) {
             super(itemView);
             mPhotoImageView = (ImageView) itemView.findViewById(R.id.fragment_gallery_image_view);
@@ -173,6 +178,8 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
                     }
                 }
             });
+
+
         }
 
         @Override
@@ -193,7 +200,8 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
                         mCheckBox.setChecked(true);
                         Log.d(TAG, "Item Checked" + adapterPosition);
 
-                    }                }else {
+                    }
+                }else {
                     LocalGalleryItem localGalleryItem = (LocalGalleryItem) mItemList.get(position);
                     Intent intent = new Intent(mContext, LocalDetailedImageActivity.class);
                     intent.putExtra("class", TAG);
@@ -247,6 +255,13 @@ public class LocalRecyclerViewAdapter extends RecyclerView.Adapter<RecyclerView.
                 return TYPE_FOOTER;
             }
         });
+    }
+
+    public void removeItems(List<Item> itemList){
+
+        for(Item item : itemList){
+            remove(item);
+        }
     }
 
 

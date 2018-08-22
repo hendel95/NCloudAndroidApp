@@ -30,13 +30,5 @@
         android:id="@+id/action_settings4"
         android:title="수정일 - 오래된 항목 우선"
         app:showAsAction="never" />
-    <item
-        android:id="@+id/action_settings5"
-        android:title="업로드일 - 최신 항목 우선"
-        app:showAsAction="never" />
-    <item
-        android:id="@+id/action_settings6"
-        android:title="업로드일 - 최신 항목 우선"
-        app:showAsAction="never" />
 
 </menu>

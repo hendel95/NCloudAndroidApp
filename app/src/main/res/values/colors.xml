@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#b39ddb</color>
-    <color name="colorPrimaryDark">#9575cd</color>
-    <color name="colorAccent">#FF4081</color>
-    <color name="colorHeader">#EDE7F6</color>
+    <color name="colorPrimary">#ffffff</color>
+    <color name="colorPrimaryDark">#cfcfcf</color>
+    <color name="colorAccent">#4066ff</color>
+    <color name="colorHeader">#f2f2f2</color>
     <color name="colorUploadHeader">#ededed</color>
     <color name="colorDecorator">#FFDEDEDE</color>
+    <color name="colorMenuItem">#ababab</color>
+    <color name="colorDrawer">#ababab</color>
 </resources>

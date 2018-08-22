@@ -5,8 +5,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
-import com.example.user.ncloudandroidapp.GDriveGalleryFragment;
-import com.example.user.ncloudandroidapp.LocalGalleryFragment;
+import com.example.user.ncloudandroidapp.Controller.GDriveGalleryFragment;
+import com.example.user.ncloudandroidapp.Controller.LocalGalleryFragment;
 
 public class TabPagerAdapter extends FragmentStatePagerAdapter {
 

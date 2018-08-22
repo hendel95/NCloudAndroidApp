@@ -1,5 +1,6 @@
 package com.example.user.ncloudandroidapp.Model;
 
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -29,6 +30,10 @@ public class LocalGalleryItem extends Item  implements Parcelable {
     @SerializedName("uploadTime")
     private String uploadTime;
 
+
+    private long id;
+    private Bitmap thumbnailBitmap;
+    private int progress;
     //private boolean isChecked;
 
     public LocalGalleryItem(){
@@ -46,6 +51,8 @@ public class LocalGalleryItem extends Item  implements Parcelable {
         this.thumbnailPath = in.readString();
         this.mimeType = in.readString();
         this.uploadTime = in.readString();
+
+
     }
 
     public static final Creator<LocalGalleryItem> CREATOR = new Creator<LocalGalleryItem>() {
@@ -75,4 +82,5 @@ public class LocalGalleryItem extends Item  implements Parcelable {
         dest.writeString(mimeType);
         dest.writeString(uploadTime);
     }
+
 }

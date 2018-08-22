@@ -1,51 +1,40 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Controller;
 
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
-import android.support.design.widget.BottomNavigationView;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
-import android.support.design.widget.Snackbar;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.Toolbar;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Adapter.TabPagerAdapter;
-
+import com.example.user.ncloudandroidapp.CustomViewPager;
+import com.example.user.ncloudandroidapp.OAuthHelper;
+import com.example.user.ncloudandroidapp.OAuthToken;
+import com.example.user.ncloudandroidapp.R;
 
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, NavigationView.OnNavigationItemSelectedListener {
-    private static final String TAG = "MainActivity";
+    private final String TAG = getClass().getSimpleName();
     private TabPagerAdapter pagerAdapter;
     private static final int GDRIVE = 0;
     private static final int LOCAL = 1;
@@ -55,6 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public final int ORDER_MODEFIED_DESC = 3;
     public final int ORDER_MODEFIED_ASC = 4;
 
+    OAuthHelper mOAuthHelper;
 
     @BindView(R.id.tabLayout)
     TabLayout mTabLayout;
@@ -89,13 +79,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        mOAuthHelper = new OAuthHelper(getApplicationContext());
         setSupportActionBar(mToolbar);
 
         // Get the ActionBar here to configure the way it behaves.
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayShowCustomEnabled(true); //커스터마이징 하기 위해 필요
         actionBar.setDisplayShowTitleEnabled(true);
-        setTitle("WM Gallery APP");
+        //setTitle("WM Gallery APP");
 
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -147,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         //return super.onCreateOptionsMenu(menu);
@@ -160,12 +152,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int id = item.getItemId();
 
         if (id == R.id.nav_gallery) {
-            Toast.makeText(getApplicationContext(), "SLIDE!", Toast.LENGTH_SHORT).show();
+       //     Toast.makeText(getApplicationContext(), "SLIDE!", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(getApplicationContext(), UploadResultActivity.class);
             startActivity(intent);
 
         } else if (id == R.id.nav_slideshow) {
-            Toast.makeText(getApplicationContext(), "GALLERY!", Toast.LENGTH_SHORT).show();
+        //    Toast.makeText(getApplicationContext(), "GALLERY!", Toast.LENGTH_SHORT).show();
             Intent intent = new Intent(getApplicationContext(), DownloadResultActivity.class);
             startActivity(intent);
         }
@@ -218,7 +210,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.nav_upload_local:
-                Toast.makeText(MainActivity.this, "UPLOAD", Toast.LENGTH_LONG).show();
+              //  Toast.makeText(MainActivity.this, "UPLOAD", Toast.LENGTH_LONG).show();
                 dialogBuilderUploadFiles();
                 break;
 
@@ -230,7 +222,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
 
             case R.id.nav_download_gdrive:
-                Toast.makeText(MainActivity.this, "DOWNLOAD", Toast.LENGTH_LONG).show();
+             //   Toast.makeText(MainActivity.this, "DOWNLOAD", Toast.LENGTH_LONG).show();
                 dialogBuilderDownloadFiles();
                 break;
 
@@ -299,7 +291,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mViewPager.setSwipeLocked(true);
                 mMultipleSelection.setVisibility(View.VISIBLE);
                 mToolbar.setVisibility(View.GONE);
-                setTitle("내 사진첩");
+                //setTitle("내 사진첩");
                 localGalleryFragment.changeMode(true);
                 localGalleryFragment.refresh();
                 localGalleryFragment.clearCheckBoxes();
@@ -309,7 +301,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mViewPager.setSwipeLocked(false);
                 mMultipleSelection.setVisibility(View.GONE);
                 mToolbar.setVisibility(View.VISIBLE);
-                setTitle("WM Gallery APP");
+                //setTitle("WM Gallery APP");
                 localGalleryFragment.changeMode(false);
                 localGalleryFragment.refresh();
                 localGalleryFragment.clearCheckBoxes();
@@ -318,7 +310,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             Fragment gdriveFragment = pagerAdapter.getItem(position);
             GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
-            gDriveGalleryFragment.deleteItems();
 
             if (mToolbar.getVisibility() == View.VISIBLE) {
                 mConstraintLayoutGDrive.setVisibility(View.VISIBLE);
@@ -326,7 +317,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mViewPager.setSwipeLocked(true);
                 mMultipleSelection.setVisibility(View.VISIBLE);
                 mToolbar.setVisibility(View.GONE);
-                setTitle("구글 드라이브");
+                //setTitle("구글 드라이브");
                 gDriveGalleryFragment.changeMode(true);
                 gDriveGalleryFragment.refresh();
                 gDriveGalleryFragment.clearCheckBoxes();
@@ -336,7 +327,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 mViewPager.setSwipeLocked(false);
                 mMultipleSelection.setVisibility(View.GONE);
                 mToolbar.setVisibility(View.VISIBLE);
-                setTitle("WM Gallery APP");
+                //setTitle("WM Gallery APP");
                 gDriveGalleryFragment.changeMode(false);
                 gDriveGalleryFragment.refresh();
                 gDriveGalleryFragment.clearCheckBoxes();
@@ -370,15 +361,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     if (position == GDRIVE) {
                         Fragment gdriveFragment = pagerAdapter.getItem(position);
                         GDriveGalleryFragment gDriveGalleryFragment = ((GDriveGalleryFragment) gdriveFragment);
-                        gDriveGalleryFragment.deleteItems();
-                        gDriveGalleryFragment.onRefresh();
+                        gDriveGalleryFragment.deleteImages();
                         Toast.makeText(MainActivity.this, "사진 삭제를 완료하였습니다.", Toast.LENGTH_LONG).show();
 
                     } else if (position == LOCAL) {
                         Fragment localFragment = pagerAdapter.getItem(position);
                         LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
-                        localGalleryFragment.deleteItems();
-                        localGalleryFragment.onRefresh();
+                        localGalleryFragment.deleteImages();
                         Toast.makeText(MainActivity.this, "사진 삭제를 완료하였습니다.", Toast.LENGTH_LONG).show();
 
                     }
@@ -399,7 +388,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void dialogBuilderUploadFiles() {
         int position = mTabLayout.getSelectedTabPosition();
-        Fragment localFragment = pagerAdapter.getItem(position);
+        final Fragment localFragment = pagerAdapter.getItem(position);
         final LocalGalleryFragment localGalleryFragment = ((LocalGalleryFragment) localFragment);
 
         int checkedItemCount = localGalleryFragment.getCheckCount();
@@ -412,9 +401,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
 
-                    localGalleryFragment.multipleFilesUpload();
-                    localGalleryFragment.onRefresh();
-                    Toast.makeText(MainActivity.this, "사진 업로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
+                    localGalleryFragment.uploadImages();
+                    //localGalleryFragment.multipleFilesUpload();
+                    //localGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 업로드 중입니다.", Toast.LENGTH_LONG).show();
                 }
             });
 
@@ -446,8 +436,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 public void onClick(DialogInterface dialog, int which) {
 
                     gDriveGalleryFragment.downloadMultipleFiles();
-                    gDriveGalleryFragment.onRefresh();
-                    Toast.makeText(MainActivity.this, "사진 다운로드를 완료하였습니다.", Toast.LENGTH_LONG).show();
+                    //gDriveGalleryFragment.onRefresh();
+                    Toast.makeText(MainActivity.this, "사진 다운로드 중입니다.", Toast.LENGTH_LONG).show();
 
                 }
             });

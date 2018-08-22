@@ -1,14 +1,14 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Controller;
 
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -19,18 +19,22 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Adapter.LocalRecyclerViewAdapter;
+import com.example.user.ncloudandroidapp.CustomDateFormat;
+import com.example.user.ncloudandroidapp.ItemDecorationAlbumColumns;
 import com.example.user.ncloudandroidapp.Model.Item;
 import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.Model.LocalHeaderItem;
-import com.example.user.ncloudandroidapp.Room.FileDatabase;
-import com.example.user.ncloudandroidapp.Room.UploadFile;
+import com.example.user.ncloudandroidapp.OAuthHelper;
+import com.example.user.ncloudandroidapp.OAuthServerIntf;
+import com.example.user.ncloudandroidapp.R;
+import com.example.user.ncloudandroidapp.RetrofitBuilder;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -40,12 +44,6 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import okhttp3.MediaType;
-import okhttp3.MultipartBody;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 
 /**
@@ -56,11 +54,14 @@ import retrofit2.Response;
  * Use the {@link LocalGalleryFragment#newInstance} factory method to
  * create an instance of this fragment.
  */
-public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
-    // TODO: Rename parameter arguments, choose names that match
+public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener{
+
+// TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
+
+    OAuthHelper mOAuthHelper;
 
     public final String PARCELABLE_ARRAY_LIST = "UploadResultActivity.INTENT";
 
@@ -76,14 +77,20 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
     public static final int NOT_FOUND = 404;
     public static final int GATEWAY_TIMEOUT = 504;
 
-    private static String ORDER = MediaStore.Images.Media.DATE_TAKEN + " DESC";
+    private String ORDER = MediaStore.Images.Media.DATE_TAKEN + " DESC";
 
+    private String a;
     public final int ORDER_CREATED_DESC = 1;
     public final int ORDER_CREATED_ASC = 2;
     public final int ORDER_MODEFIED_DESC = 3;
     public final int ORDER_MODEFIED_ASC = 4;
 
     private static final Integer PAGE_SIZE = 100;
+
+    private final String TAG = getClass().getSimpleName();
+
+    SimpleCursorAdapter mSimpleCursorAdapter;
+
 
     private boolean isLastPage = false;
     private boolean isLoading = false;
@@ -105,14 +112,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
     OAuthServerIntf server;
 
     private int PICK_IMAGE_REQUEST = 1;
-    private String TAG = "LocalGalleryFragment";
     private static final int DEFAULT_SPAN_COUNT = 3;
-
-    private Date compareDate = new Date();
-    private Date date = new Date();
-    // public static List<Item> sItemList = new ArrayList<>();
-
-    private static ArrayList<LocalGalleryItem> uploadedItems = new ArrayList<>();
 
     private static final int REQUEST_PERMISSIONS = 100;
     CustomDateFormat dateFormat = new CustomDateFormat();
@@ -121,17 +121,9 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment LocalGalleryFragment.
-     */
 
-    public void setOrderByNum(int order){
-        switch (order){
+    public void setOrderByNum(int order) {
+        switch (order) {
             case ORDER_CREATED_DESC:
                 setORDER(MediaStore.Images.Media.DATE_TAKEN + " DESC");
                 onRefresh();
@@ -148,13 +140,14 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                 break;
 
             case ORDER_MODEFIED_ASC:
-                setORDER(MediaStore.Images.Media.DATE_MODIFIED + " DESC");
+                setORDER(MediaStore.Images.Media.DATE_MODIFIED + " ASC");
                 onRefresh();
                 break;
         }
     }
-    public static void setORDER(String ORDER) {
-        LocalGalleryFragment.ORDER = ORDER;
+
+    public void setORDER(String order) {
+        this.ORDER = order;
     }
 
 
@@ -168,6 +161,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         return fragment;
     }
 
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -175,6 +169,11 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+
+        mOAuthHelper = new OAuthHelper(getContext());
+
+        //getLoaderManager().initLoader(MEDIA_STORE_LOADER, null, this);
+
     }
 
     @Override
@@ -184,15 +183,22 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         View view = inflater.inflate(R.layout.fragment_local_gallery, container, false);
         ButterKnife.bind(this, view);
 
-
         mSwipeRefreshLayout.setOnRefreshListener(this);
+        mSwipeRefreshLayout.setColorSchemeColors(
+                getResources().getColor(R.color.colorAccent),
+                getResources().getColor(android.R.color.holo_green_light),
+                getResources().getColor(android.R.color.holo_orange_light)
+        );
+
         gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
 
         mRecyclerView.setRecycledViewPool(new RecyclerView.RecycledViewPool());
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
-        mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
+        //mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
         mLocalRecyclerViewAdapter = new LocalRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT, false);
+
+        mRecyclerView.addItemDecoration(new ItemDecorationAlbumColumns(getContext(), R.dimen.gallery_item_spacing));
 
         mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
         server = RetrofitBuilder.getOAuthClient(getActivity());
@@ -201,13 +207,6 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         return view;
     }
 
-    /*
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-
-        inflater.inflate(R.menu.menu_main, menu);
-        super.onCreateOptionsMenu(menu, inflater);
-    }*/
 
     @Override
     public void onRefresh() {
@@ -220,10 +219,9 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                mLocalRecyclerViewAdapter.clear();
-                mLocalRecyclerViewAdapter.notifyDataSetChanged();
-                mLocalRecyclerViewAdapter.clearStateArray();
+
                 permissionCheck();
+
                 //mRecyclerView.setAdapter(mLocalRecyclerViewAdapter);
                 mSwipeRefreshLayout.setRefreshing(false);
             }
@@ -241,7 +239,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
             if ((shouldShowRequestPermissionRationale(
                     android.Manifest.permission.WRITE_EXTERNAL_STORAGE))) {
                 //사용자가 임의로 권한을 취소시킨 경우
-                //Toast.makeText(getActivity(), "사용자에 의한 권한 취소", Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), "사용자에 의한 권한 취소", Toast.LENGTH_LONG).show();
             } else {
                 //최초로 권한을 요청하는 경우 (첫 실행)
                 //Fragment일 때 ActivityCompat.requestPermissions 말고requestPermissions를 사용해야함.
@@ -251,15 +249,15 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                         new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE, Manifest.permission.READ_EXTERNAL_STORAGE},
                         REQUEST_PERMISSIONS);
                 */
-                //Toast.makeText(getActivity(), "최초 권한 요청.", Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), "최초 권한 요청.", Toast.LENGTH_LONG).show();
 
             }
         } else {
             //사용 권한이 있음을 확인하는 경우
             Log.e(TAG, "Permission Checked");
-            //Toast.makeText(getActivity(), "권한 확인 완료.", Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), "권한 확인 완료.", Toast.LENGTH_LONG).show();
             getImages();
-            //getImagePath();
+
 
         }
     }
@@ -280,6 +278,8 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         mLocalRecyclerViewAdapter.setModeChanged(mode);
     }
 
+
+
     /**
      * This interface must be implemented by activities that contain this
      * fragment to allow an interaction in this fragment to be communicated
@@ -295,150 +295,40 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         void onFragmentInteraction(Uri uri);
     }
 
-    public void getImages(){
+    public void getImages() {
         AsyncTask<Void, Integer, List<Item>> asyncTask = new DownloadImageTask();
         asyncTask.execute();
 
     }
 
-    public List<Item> getImagePath() {
+    public void deleteImages() {
+        AsyncTask<Void, Void, List<Item>> asyncTask = new DeleteImageTask();
+        asyncTask.execute();
 
-
-        List<Item> sItemList = new ArrayList<>();
-        sItemList.clear();
-        mLocalRecyclerViewAdapter.clear();
-        boolean isFirstItem = true;
-        Uri uri;
-        Cursor cursor;
-        int column_index_data, column_index_date_taken, column_index_image_id, column_index_mime_type, column_index_name, column_index_orientation;
-
-        String absolutePathOfImage = null;
-        String image_id = null;
-        uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
-
-        String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.MediaColumns.MIME_TYPE, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns._ID};
-
-        //final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
-        cursor = getActivity().getContentResolver().query(uri, projection, null, null, ORDER);
-
-        column_index_data = cursor.getColumnIndex(projection[0]);
-        column_index_date_taken = cursor.getColumnIndex(projection[1]);
-        column_index_mime_type = cursor.getColumnIndex(projection[2]);
-        column_index_name = cursor.getColumnIndex(projection[3]);
-        column_index_image_id = cursor.getColumnIndex(projection[4]);
-        if (cursor.getCount() == 0) {
-           // mTextView.bringToFront();
-            mTextView.setVisibility(View.VISIBLE);
-        }else{
-            mTextView.setVisibility(View.GONE);
-
-        }
-
-
-        while (cursor.moveToNext()) {
-            absolutePathOfImage = cursor.getString(column_index_data);
-
-            LocalGalleryItem obj_model = new LocalGalleryItem();
-            obj_model.setPath(absolutePathOfImage);
-
-            obj_model.setName(cursor.getString(column_index_name));
-
-            image_id = cursor.getString(column_index_image_id);
-            //obj_model.setThumbnailPath(uriToThumbnail(image_id));
-            obj_model.setMimeType(cursor.getString(column_index_mime_type));
-            obj_model.setThumbnailPath(getThumbnailPathForLocalFile(image_id, obj_model.getPath()));
-
-            date.setTime(Long.parseLong(cursor.getString(column_index_date_taken)));
-            obj_model.setDateTakenTime(dateFormat.DateToString(date, Item.GRID_ITEM_TYPE));
-
-
-            if (isFirstItem == true) {
-                compareDate.setTime(date.getTime());
-                sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));
-                isFirstItem = false;
-
-            }
-
-            if (dateFormat.compareTime(compareDate, date) != 0) {
-                int check = dateFormat.compareTime(compareDate, date);
-                compareDate.setTime(date.getTime());
-                sItemList.add(new LocalHeaderItem(dateFormat.DateToString(date, Item.HEADER_ITEM_TYPE)));
-            }
-
-            sItemList.add(obj_model);
-
-        }
-
-        mLocalRecyclerViewAdapter.addAll(sItemList);
-
-        return sItemList;
     }
 
 
-    String getThumbnailPathForLocalFile(String imageId, String imagePath) {
-        // DATA는 이미지 파일의 스트림 데이터 경로를 나타냅니다.
-        String[] projection = {MediaStore.Images.Thumbnails.DATA};
-        ContentResolver contentResolver = getActivity().getContentResolver();
+    public void uploadImages() {
+        HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
 
-        // 원본 이미지의 _ID가 매개변수 imageId인 썸네일을 출력
-        Cursor thumbnailCursor = contentResolver.query(
-                MediaStore.Images.Thumbnails.EXTERNAL_CONTENT_URI, // 썸네일 컨텐트 테이블
-                projection, // DATA를 출력
-                MediaStore.Images.Thumbnails.IMAGE_ID + "=?", // IMAGE_ID는 원본 이미지의 _ID를 나타냅니다.
-                new String[]{imageId},
-                null);
+        Iterator<Integer> iterator = itemStates.keySet().iterator();
+        int key;
 
+        List<LocalGalleryItem> localGalleryItemList = new ArrayList<>();
 
-        if (thumbnailCursor == null) {
-            return imageId;
-        } else if (thumbnailCursor.moveToFirst()) { //thumbnailPath가 존재할 때..
-            int thumbnailColumnIndex = thumbnailCursor.getColumnIndex(projection[0]);
+        while (iterator.hasNext()) {
+            final LocalGalleryItem item;
 
-            String thumbnailPath = thumbnailCursor.getString(thumbnailColumnIndex);
-            thumbnailCursor.close();
+            key = iterator.next();
 
+            item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
+            localGalleryItemList.add(item);
 
-            //원본 사진의 orientation 속성을 가져온다
-            ExifInterface exif = null;
-            try {
-                exif = new ExifInterface(imagePath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_UNDEFINED);
-
-
-            ExifInterface exifInterface = null;
-            try {
-                exifInterface = new ExifInterface(thumbnailPath);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            //thumbnail image의 orientation 속성을 원래 사진의 orientation과 같게 만들어준다.
-            exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,
-                    String.valueOf(orientation));
-            try {
-                exifInterface.saveAttributes();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-
-            return thumbnailPath;
-        } else {
-            // thumbnailCursor가 비었습니다.
-            // 이는 이미지 파일이 있더라도 썸네일이 존재하지 않을 수 있기 때문입니다.
-            // 보통 이미지가 생성된 지 얼마 되지 않았을 때 그렇습니다.
-            // 썸네일이 존재하지 않을 때에는 아래와 같이 썸네일을 생성하도록 요청합니다
-
-            //return Bitmap
-            MediaStore.Images.Thumbnails.getThumbnail(contentResolver, Long.parseLong(imageId), MediaStore.Images.Thumbnails.MINI_KIND, null);
-            thumbnailCursor.close();
-            return getThumbnailPathForLocalFile(imageId, imagePath);
         }
+
+        Intent intent = new Intent(getContext(), UploadResultActivity.class);
+        intent.putParcelableArrayListExtra("UPLOAD_LIST", (ArrayList<? extends Parcelable>) localGalleryItemList);
+        startActivity(intent);
     }
 
 
@@ -454,7 +344,6 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
                     if (grantResults.length > 0 && grantResults[i] == PackageManager.PERMISSION_GRANTED) {
                         //권한 동의 버튼 선택
-                        //getImagePath();
                         getImages();
                     } else {
                         //사용자가 권한 동의를 안함
@@ -497,52 +386,87 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         gridLayoutManager.scrollToPositionWithOffset(0, 0);
     }
 
+    public class DeleteImageTask extends AsyncTask<Void, Void, List<Item>> {
 
-    protected void deleteItems() {
-
-        HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
-        String checkedItemId;
-
-        Iterator<Integer> iterator = itemStates.keySet().iterator();
-        LocalGalleryItem item;
-
-
-        while (iterator.hasNext()) {
-            int key = iterator.next();
-            item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
-
-            File file = new File(item.getPath());
-            File fileThumbnail = new File(item.getThumbnailPath());
-            Log.i(TAG, file.getAbsolutePath());
-
-            if (file.exists()) {
-
-                file.delete();
-                getActivity().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
-
-            }
-
-            if(fileThumbnail.exists()){
-                fileThumbnail.delete();
-                getActivity().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(fileThumbnail)));
-
-            }
-
+        @Override
+        protected void onPostExecute(List<Item> itemList) {
+            mLocalRecyclerViewAdapter.removeItems(itemList);
+            mLocalRecyclerViewAdapter.clearStateArray();
         }
 
+        @Override
+        protected List<Item> doInBackground(Void... voids) {
+
+            HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
+            String checkedItemId;
+
+            List<Item> deletedItems = new ArrayList<>();
+            Iterator<Integer> iterator = itemStates.keySet().iterator();
+            LocalGalleryItem item;
+
+
+            while (iterator.hasNext()) {
+                int key = iterator.next();
+                item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
+
+                File file = new File(item.getPath());
+                File fileThumbnail = new File(item.getThumbnailPath());
+                Log.i(TAG, file.getAbsolutePath());
+
+                if (file.exists()) {
+                    if (file.delete()) {
+                        deletedItems.add(item);
+                        getActivity().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
+                    }
+                }
+
+                if (fileThumbnail.exists()) {
+                    fileThumbnail.delete();
+                    getActivity().sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(fileThumbnail)));
+
+                }
+
+            }
+
+            return deletedItems;
+        }
     }
 
 
-    protected void multipleFilesUpload() {
+    public class UploadImageTask extends AsyncTask<Void, Void, List<LocalGalleryItem>> {
+
+        @Override
+        protected void onPreExecute(){
+            super.onPreExecute();
+        }
 
 
-        uploadedItems.clear();
+
+        @Override
+        protected List<LocalGalleryItem> doInBackground(Void... voids) {
+            return multipleFilesUpload();
+
+        }
+
+        @Override
+        protected void onPostExecute(List<LocalGalleryItem> localGalleryItems){
+            Log.i(TAG, "onPostExecute");
+            mLocalRecyclerViewAdapter.clearStateArray();
+            Intent intent = new Intent(getActivity(), UploadResultActivity.class);
+            intent.putParcelableArrayListExtra("UPLOAD_LIST", (ArrayList<? extends Parcelable>) localGalleryItems);
+            startActivity(intent);
+
+        }
+    }
+
+    protected List<LocalGalleryItem> multipleFilesUpload() {
 
         HashMap<Integer, Boolean> itemStates = mLocalRecyclerViewAdapter.getItemStateArray();
 
         Iterator<Integer> iterator = itemStates.keySet().iterator();
         int key;
 
+        List<LocalGalleryItem> localGalleryItemList = new ArrayList<>();
         MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
 
         while (iterator.hasNext()) {
@@ -551,8 +475,8 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
             key = iterator.next();
 
             item = ((LocalGalleryItem) mLocalRecyclerViewAdapter.getItem(key));
-
-            File file = new File(item.getPath());
+            localGalleryItemList.add(item);
+           /* File file = new File(item.getPath());
 
             // MediaType contentType = MediaType.parse("application/json; charset=UTF-8");
             String content = "{\"name\": \"" + file.getName() + "\"}";
@@ -571,8 +495,8 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                     Toast.makeText(getContext(), "uploading successfully", Toast.LENGTH_SHORT).show();
 
                     Log.i(TAG, response.headers().toString());
-                    if(response.isSuccessful()){
-                        uploadedItems.add(item);
+                    if (response.isSuccessful()) {
+                      //  uploadedItems.add(item);
                         Date currentDate = new Date();
                         UploadFile uploadFile = new UploadFile(item.getName(), item.getThumbnailPath(), dateFormat.DateToString(currentDate, Item.ROOM_ITEM_TYPE));
                         FileDatabase.getDatabase(getContext()).getFileDao().insertUploadFile(uploadFile);
@@ -583,20 +507,17 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
 
                 }
-            });
+            });*/
 
         }
 
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                Intent intent = new Intent(getActivity(), UploadResultActivity.class);
-                startActivity(intent);
-            }
-        }, 5000);
-
-
+        return  localGalleryItemList;
+      /*  Intent intent = new Intent(getContext(), UploadResultActivity.class);
+        intent.putParcelableArrayListExtra("UPLOAD_LIST", (ArrayList<? extends Parcelable>) localGalleryItemList);
+        startActivity(intent);*/
     }
+
+
 
 
     public class DownloadImageTask extends AsyncTask<Void, Integer, List<Item>> {
@@ -605,21 +526,21 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
         private Date date = new Date();
         CustomDateFormat dateFormat = new CustomDateFormat();
 
-        @Override protected void onPreExecute() {
+        @Override
+        protected void onPreExecute() {
             mLocalRecyclerViewAdapter.clear();
-
         }
 
 
         @Override
-        protected void onPostExecute(List<Item> itemList){
+        protected void onPostExecute(List<Item> itemList) {
             mLocalRecyclerViewAdapter.addAll(itemList);
-
+            mLocalRecyclerViewAdapter.clearStateArray();
         }
 
 
         @Override
-        protected List<Item> doInBackground(Void ... voids) {
+        protected List<Item> doInBackground(Void... voids) {
             List<Item> sItemList = new ArrayList<>();
             sItemList.clear();
             boolean isFirstItem = true;
@@ -628,13 +549,13 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
             int column_index_data, column_index_date_taken, column_index_image_id, column_index_mime_type, column_index_name, column_index_orientation;
 
             String absolutePathOfImage = null;
-            String image_id = null;
+            long image_id;
             uri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
 
             String[] projection = {MediaStore.MediaColumns.DATA, MediaStore.Images.ImageColumns.DATE_TAKEN, MediaStore.MediaColumns.MIME_TYPE, MediaStore.MediaColumns.DISPLAY_NAME, MediaStore.MediaColumns._ID};
 
-            final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
-            cursor = getActivity().getContentResolver().query(uri, projection, null, null, orderBy + " DESC");
+            //final String orderBy = MediaStore.Images.Media.DATE_TAKEN;
+            cursor = getActivity().getContentResolver().query(uri, projection, null, null, ORDER);
 
             column_index_data = cursor.getColumnIndex(projection[0]);
             column_index_date_taken = cursor.getColumnIndex(projection[1]);
@@ -656,11 +577,13 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                 obj_model.setPath(absolutePathOfImage);
 
                 obj_model.setName(cursor.getString(column_index_name));
-
-                image_id = cursor.getString(column_index_image_id);
-                //obj_model.setThumbnailPath(uriToThumbnail(image_id));
+                image_id = cursor.getLong(column_index_image_id);
+                obj_model.setId(image_id);
                 obj_model.setMimeType(cursor.getString(column_index_mime_type));
-                obj_model.setThumbnailPath(getThumbnailPathForLocalFile(image_id, obj_model.getPath()));
+                obj_model.setThumbnailPath(absolutePathOfImage);
+
+                //obj_model.setThumbnailBitmap(getThumbnail(image_id));
+               //obj_model.setThumbnailPath(getThumbnailPathForLocalFile(image_id, obj_model.getPath()));
 
                 date.setTime(Long.parseLong(cursor.getString(column_index_date_taken)));
                 obj_model.setDateTakenTime(dateFormat.DateToString(date, Item.GRID_ITEM_TYPE));
@@ -709,7 +632,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
                 String thumbnailPath = thumbnailCursor.getString(thumbnailColumnIndex);
                 thumbnailCursor.close();
-
+/*
                 //원본 사진의 orientation 속성을 가져온다
                 ExifInterface exif = null;
                 try {
@@ -718,27 +641,35 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
                     e.printStackTrace();
                 }
 
-                int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
-                        ExifInterface.ORIENTATION_UNDEFINED);
+                if (exif != null) {
+
+                    int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION,
+                            ExifInterface.ORIENTATION_UNDEFINED);
 
 
-                ExifInterface exifInterface = null;
-                try {
-                    exifInterface = new ExifInterface(thumbnailPath);
-                } catch (IOException e) {
-                    e.printStackTrace();
+                    ExifInterface exifInterface = null;
+                    try {
+                        exifInterface = new ExifInterface(thumbnailPath);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                    if(exifInterface != null) {
+
+                        //thumbnail image의 orientation 속성을 원래 사진의 orientation과 같게 만들어준다.
+                        exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,
+                                String.valueOf(orientation));
+                        try {
+                            exifInterface.saveAttributes();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+
                 }
 
-                //thumbnail image의 orientation 속성을 원래 사진의 orientation과 같게 만들어준다.
-                exifInterface.setAttribute(ExifInterface.TAG_ORIENTATION,
-                        String.valueOf(orientation));
-                try {
-                    exifInterface.saveAttributes();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-
+*/
                 return thumbnailPath;
             } else {
                 // thumbnailCursor가 비었습니다.
@@ -755,7 +686,7 @@ public class LocalGalleryFragment extends Fragment implements SwipeRefreshLayout
 
     }
 
-    public int getCheckCount(){
+    public int getCheckCount() {
         return mLocalRecyclerViewAdapter.getItemStateArray().size();
     }
 

@@ -1,4 +1,4 @@
-package com.example.user.ncloudandroidapp;
+package com.example.user.ncloudandroidapp.Controller;
 
 import android.annotation.SuppressLint;
 import android.content.ContentValues;
@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -21,10 +22,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.user.ncloudandroidapp.Adapter.GDriveRecyclerViewAdapter;
+import com.example.user.ncloudandroidapp.CustomDateFormat;
+import com.example.user.ncloudandroidapp.ItemDecorationAlbumColumns;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.GalleryItems;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
+import com.example.user.ncloudandroidapp.OAuthHelper;
+import com.example.user.ncloudandroidapp.OAuthServerIntf;
+import com.example.user.ncloudandroidapp.R;
+import com.example.user.ncloudandroidapp.RetrofitBuilder;
 import com.example.user.ncloudandroidapp.Room.DownloadFile;
 import com.example.user.ncloudandroidapp.Room.FileDatabase;
 
@@ -62,6 +69,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
+    private OAuthHelper mOAuthHelper;
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
@@ -75,7 +83,8 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
     public static final int NOT_FOUND = 404;
     public static final int GATEWAY_TIMEOUT = 504;
 
-    private static final String TAG = "GDriveGalleryFragment";
+    private final String TAG = getClass().getSimpleName();
+
     private static final String FIELDS = "nextPageToken, files/id, files/name, files/mimeType, files/thumbnailLink, files/createdTime";
     private static final String Q = "mimeType contains 'image' and trashed = false";
     private static String ORDER = "createdTime desc";
@@ -134,7 +143,7 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        mOAuthHelper = new OAuthHelper(getContext());
     }
 
     @Override
@@ -151,6 +160,12 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
 
         mSwipeRefreshLayout.setOnRefreshListener(this);
 
+        mSwipeRefreshLayout.setColorSchemeColors(
+                getResources().getColor(R.color.colorAccent),
+                getResources().getColor(android.R.color.holo_green_light),
+                getResources().getColor(android.R.color.holo_orange_light)
+        );
+
         server = RetrofitBuilder.getOAuthClient(getActivity());
 
         gridLayoutManager = new GridLayoutManager(getActivity(), DEFAULT_SPAN_COUNT);
@@ -159,6 +174,9 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(gridLayoutManager);
         mRecyclerView.addOnScrollListener(recyclerViewOnScrollListener);
+
+        mRecyclerView.addItemDecoration(new ItemDecorationAlbumColumns(getContext(), R.dimen.gallery_item_spacing));
+
 
         mAdapter = new GDriveRecyclerViewAdapter(getActivity(), gridLayoutManager, DEFAULT_SPAN_COUNT, false);
         mRecyclerView.setAdapter(mAdapter);
@@ -414,16 +432,17 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
 
     public void downloadMultipleFiles(){
         HashMap<Integer, Boolean> itemStates = mAdapter.getItemStateArray();
+        List<GalleryItem> galleryItemList = new ArrayList<>();
 
         Iterator<Integer> iterator = itemStates.keySet().iterator();
 
         while(iterator.hasNext()){
 
-            final GalleryItem finalGalleryItem;
             int key = iterator.next();
+            GalleryItem galleryItem = ((GalleryItem)mAdapter.getItem(key));
+            galleryItemList.add(galleryItem);
 
-            finalGalleryItem = ((GalleryItem)mAdapter.getItem(key));
-            Call<ResponseBody> responseBodyCall = server.downloadFile(finalGalleryItem.getId());
+            /*Call<ResponseBody> responseBodyCall = server.downloadFile(finalGalleryItem.getId());
 
             responseBodyCall.enqueue(new Callback<ResponseBody>() {
                 @SuppressLint("StaticFieldLeak")
@@ -452,19 +471,26 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
                 public void onFailure(Call<ResponseBody> call, Throwable t) {
 
                 }
-            });
+            });*/
 
         }
 
+        mAdapter.clearStateArray();
+        Intent intent = new Intent(getActivity(), DownloadResultActivity.class);
+        intent.putParcelableArrayListExtra("DOWNLOAD_LIST", (ArrayList<? extends Parcelable>) galleryItemList);
+        startActivity(intent);
+
+/*
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
+                mAdapter.clearStateArray();
                 Intent intent = new Intent(getActivity(), DownloadResultActivity.class);
                 startActivity(intent);
             }
         }, 5000);
 
-
+*/
     }
 
     private boolean writeResponseBodyToDisk(ResponseBody body, GalleryItem item) {
@@ -571,6 +597,60 @@ public class GDriveGalleryFragment extends Fragment implements SwipeRefreshLayou
             });
         }
 
+    }
+
+    public void deleteImages(){
+        AsyncTask<Void, Void, List<Item>> asyncTask = new DeleteImageTask();
+        asyncTask.execute();
+    }
+
+    public class DeleteImageTask extends AsyncTask<Void, Void, List<Item>> {
+
+        @Override
+        protected void onPostExecute(List<Item> itemList){
+            mAdapter.removeItems(itemList);
+            mAdapter.clearStateArray();
+        }
+
+        @Override
+        protected List<Item> doInBackground(Void... voids) {
+            HashMap<Integer, Boolean> itemStates = mAdapter.getItemStateArray();
+            String checkedItemId;
+            final List<Item> deletedItems = new ArrayList<>();
+
+                Iterator<Integer> iterator = itemStates.keySet().iterator();
+
+                while (iterator.hasNext()) {
+                    int key = iterator.next();
+
+                    final GalleryItem item = ((GalleryItem) mAdapter.getItem(key));
+                    checkedItemId = item.getId();
+
+
+                    Call<ResponseBody> responseBodyCall = server.deleteFile(checkedItemId);
+                    responseBodyCall.enqueue(new Callback<ResponseBody>() {
+                        @Override
+                        public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                            deletedItems.add(item);
+
+                            if (response.code() == 204) {
+                                Log.i(TAG, "File deleted sucessfully!!");
+                            } else {
+                                Log.e(TAG, "error caused from deleting function");
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Call<ResponseBody> call, Throwable t) {
+                            Log.e(TAG, "error");
+                        }
+                    });
+                }
+
+
+                return deletedItems;
+
+        }
     }
 
     public int getCheckCount(){

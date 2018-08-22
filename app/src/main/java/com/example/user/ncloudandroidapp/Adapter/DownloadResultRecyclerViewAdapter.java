@@ -1,22 +1,19 @@
 package com.example.user.ncloudandroidapp.Adapter;
 
 import android.content.Context;
-import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
-import com.example.user.ncloudandroidapp.GDriveDetailedImageActivity;
 import com.example.user.ncloudandroidapp.Model.GalleryItem;
 import com.example.user.ncloudandroidapp.Model.HeaderItem;
 import com.example.user.ncloudandroidapp.Model.Item;
-import com.example.user.ncloudandroidapp.Model.LocalGalleryItem;
 import com.example.user.ncloudandroidapp.R;
 
 import java.util.ArrayList;
@@ -69,13 +66,13 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         if (viewType == TYPE_HEADER) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.room_header_item, parent, false);
-            return new DownloadResultRecyclerViewAdapter.HeaderViewHolder(layoutView);
+            return new HeaderViewHolder(layoutView);
         } else if (viewType == TYPE_ITEM) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.room_item, parent, false);
-            return new DownloadResultRecyclerViewAdapter.ItemViewHolder(layoutView);
+            return new ItemViewHolder(layoutView);
         } else if (viewType == TYPE_FOOTER) {
             View layoutView = LayoutInflater.from(parent.getContext()).inflate(R.layout.progress_item, parent, false);
-            return new DownloadResultRecyclerViewAdapter.LoadingViewHolder(layoutView);
+            return new LoadingViewHolder(layoutView);
         }
         throw new RuntimeException("No match for " + viewType + ".");
     }
@@ -86,13 +83,13 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
 
         final Item mObject = itemObjects.get(position);
 
-        if (holder instanceof DownloadResultRecyclerViewAdapter.HeaderViewHolder) { //header 인 경우 binding
-            ((DownloadResultRecyclerViewAdapter.HeaderViewHolder) holder).mHeaderTitle.setText(((HeaderItem) mObject).getCreatedTime());
-        } else if (holder instanceof DownloadResultRecyclerViewAdapter.ItemViewHolder) { //list item 인 경우 binding
-            ImageView imageView = ((DownloadResultRecyclerViewAdapter.ItemViewHolder) holder).mImageView;
-            TextView titleText = ((DownloadResultRecyclerViewAdapter.ItemViewHolder) holder).mTitleText;
-            TextView dateText = ((DownloadResultRecyclerViewAdapter.ItemViewHolder) holder).mDateText;
-
+        if (holder instanceof HeaderViewHolder) { //header 인 경우 binding
+            ((HeaderViewHolder) holder).mHeaderTitle.setText(((HeaderItem) mObject).getCreatedTime());
+        } else if (holder instanceof ItemViewHolder) { //list item 인 경우 binding
+            ImageView imageView = ((ItemViewHolder) holder).mImageView;
+            TextView titleText = ((ItemViewHolder) holder).mTitleText;
+            TextView dateText = ((ItemViewHolder) holder).mDateText;
+          //  ProgressBar progressBar = ((ItemViewHolder)holder).mProgressBar;
 
             Glide.with(mContext)
                     .load(((GalleryItem) mObject).getThumbnailLink())
@@ -100,7 +97,19 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
                     .into(imageView);
 
             titleText.setText(((GalleryItem) mObject).getName());
-            dateText.setText(((GalleryItem) mObject).getDownloadTime());
+
+            switch (((GalleryItem)mObject).getResult()){
+                case Item.DOWNLOAD_SUCCESS:
+                    dateText.setText(((GalleryItem) mObject).getDownloadTime());
+                    break;
+
+                case Item.DOWNLOAD_DUPLICATED:
+                    dateText.setText(R.string.duplicated_file_name);
+                    break;
+
+                case Item.DOWNLOAD_FAILED:
+                    dateText.setText(R.string.download_failed);
+            }
 
         }
 
@@ -155,6 +164,9 @@ public class DownloadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recy
 
         @BindView(R.id.room_result_date_text)
         TextView mDateText;
+
+       // @BindView(R.id.room_result_progressbar)
+       // ProgressBar mProgressBar;
 
         public ItemViewHolder(final View itemView) {
             super(itemView);

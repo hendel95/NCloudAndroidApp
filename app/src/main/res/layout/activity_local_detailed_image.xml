@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/black"
-    tools:context=".LocalDetailedImageActivity">
+    tools:context=".Controller.LocalDetailedImageActivity">
 
     <android.support.v7.widget.Toolbar
         android:id="@+id/toolbar_detailed_local"
@@ -22,13 +22,12 @@
         android:layout_height="match_parent"
         android:layout_alignParentTop="true" />
 
-
-    <ProgressBar
+   <!-- <ProgressBar
         android:id="@+id/gdrive_progressbar"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true" />
+        android:layout_centerVertical="true" />-->
 
     <TextView
         android:id="@+id/progressbar_text"
@@ -37,6 +36,43 @@
         android:textColor="@android:color/white"
         android:text="0"
         android:layout_centerInParent="true"/>
+
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/bottom_nav_local"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/my_gradient2"
+        >
+
+        <ImageButton
+            android:id="@+id/nav_upload_local"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="8dp"
+            android:layout_marginLeft="96dp"
+            android:layout_marginStart="96dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/ic_action_upload"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <ImageButton
+            android:id="@+id/nav_delete_local"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginBottom="8dp"
+            android:layout_marginEnd="96dp"
+            android:layout_marginRight="96dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/ic_action_trash_light"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0" />
+    </android.support.constraint.ConstraintLayout>
 
 
 
