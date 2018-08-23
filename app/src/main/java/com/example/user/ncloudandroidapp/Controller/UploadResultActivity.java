@@ -136,8 +136,7 @@ public class UploadResultActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "사진 업로드 중입니다.", Toast.LENGTH_SHORT).show();
 
             for (LocalGalleryItem item : uploadRequestList) {
-                mUploadResultRecyclerViewAdapter.add(item);
-                mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
+
                 executeUpload(item);
             }
             mItemArrayList.clear();
@@ -349,7 +348,15 @@ public class UploadResultActivity extends AppCompatActivity {
                     message.arg1 = percentage;
                     mainThreadHandler.sendMessage(message);*/
             //
-                //    mUploadResultRecyclerViewAdapter.setProgressUpdate(updateItemPosition, percentage);
+                mUploadResultRecyclerViewAdapter.setProgressUpdate(updateItemPosition, percentage);
+
+                mRecyclerView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
+                    }
+                });
+
                 //mProgressBar.setProgress(percentage);
 
 
@@ -368,6 +375,12 @@ public class UploadResultActivity extends AppCompatActivity {
                 item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
                 //int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
                 mUploadResultRecyclerViewAdapter.setItemResult(updateItemPosition, item);
+                mRecyclerView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
+                    }
+                });
             }
 
              @Override
@@ -381,6 +394,12 @@ public class UploadResultActivity extends AppCompatActivity {
                 item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
                 //int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
                 mUploadResultRecyclerViewAdapter.setItemResult(updateItemPosition, item);
+                mRecyclerView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
+                    }
+                });
             }
         });
 
@@ -390,9 +409,15 @@ public class UploadResultActivity extends AppCompatActivity {
 
     protected void executeUpload(final LocalGalleryItem galleryItem) {
 
-        int updateItemPosition = uploadRequestList.indexOf(galleryItem);
+        //int updateItemPosition = uploadRequestList.indexOf(galleryItem);
+        mUploadResultRecyclerViewAdapter.add(galleryItem);
+        mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
 
+        int updateItemPosition = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
         final LocalGalleryItem item = galleryItem;
+
+
+
         File file = new File(item.getPath());
 
         String content = "{\"name\": \"" + file.getName() + "\"}";
@@ -454,6 +479,12 @@ public class UploadResultActivity extends AppCompatActivity {
                 item.setUploadTime(mDateFormat.dateFormatting(uploadFile.getMDate(), Item.ROOM_ITEM_TYPE));
                 int position = mUploadResultRecyclerViewAdapter.getItemPosition(galleryItem);
                 mUploadResultRecyclerViewAdapter.setItemResult(position, item);
+                mRecyclerView.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mUploadResultRecyclerViewAdapter.notifyDataSetChanged();
+                    }
+                });
 
             }
         });

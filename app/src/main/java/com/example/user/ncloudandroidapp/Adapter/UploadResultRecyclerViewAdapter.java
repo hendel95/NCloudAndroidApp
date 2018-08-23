@@ -119,7 +119,7 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
                     break;
 
                 case Item.DOWNLOAD_FAILED:
-                    dateText.setText(R.string.download_failed);
+                    dateText.setText(R.string.upload_failed);
                     progressBar.setVisibility(View.GONE);
                     dateText.setVisibility(View.VISIBLE);
                     break;
@@ -148,7 +148,7 @@ public class UploadResultRecyclerViewAdapter extends RecyclerView.Adapter<Recycl
     public void setItemResult(int position, LocalGalleryItem item){
 
         itemObjects.set(position,item);
-        notifyItemChanged(position);
+//        notifyItemChanged(position);
 
     }
 

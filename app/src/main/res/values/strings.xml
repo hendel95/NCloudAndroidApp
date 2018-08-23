@@ -28,4 +28,6 @@
     <string name="duplicated_file_name">중복된 이름의 파일이 있습니다.</string>
     <string name="download_finished">파일 다운로드가 완료되었습니다.</string>
     <string name="download_failed">파일 다운로드에 실패하였습니다.</string>
+    <string name="upload_finished">파일 업로드가 완료되었습니다.</string>
+    <string name="upload_failed">파일 업로드에 실패하였습니다.</string>
 </resources>
