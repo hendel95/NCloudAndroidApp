@@ -83,12 +83,6 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
     Toolbar mToolbar;
 
 
-    //@BindView(R.id.gdrive_progressbar)
-    //ProgressBar mProgressBar;
-
-    @BindView(R.id.progressbar_text)
-    TextView mTextView;
-
     @BindView(R.id.bottom_nav_local)
     ConstraintLayout mConstraintLayout;
 
@@ -119,7 +113,6 @@ public class LocalDetailedImageActivity extends AppCompatActivity {
 
         mOAuthHelper = new OAuthHelper(getApplicationContext());
      //   mProgressBar.bringToFront();
-        mTextView.bringToFront();
 
         setSupportActionBar(mToolbar);
         server = RetrofitBuilder.getOAuthClient(getApplication());

@@ -25,7 +25,8 @@ public class ProgressRequestBody extends RequestBody {
     private String mMimeType;
     private Context mContext;
 
-    private static final int DEFAULT_BUFFER_SIZE = 2048;
+    //private static final int DEFAULT_BUFFER_SIZE = 2048;
+    private static final int DEFAULT_BUFFER_SIZE = 4096;
 
     public interface UploadCallbacks {
         void onProgressUpdate(int percentage);

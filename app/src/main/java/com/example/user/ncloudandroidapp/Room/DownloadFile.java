@@ -29,16 +29,6 @@ public class DownloadFile {
     @ColumnInfo(name="result")
     private int result;
 
-/*    @ColumnInfo(name="mime_type")
-    private String mMimeType;
-
-    @ColumnInfo(name="date_taken_time")
-    private String mDateTakenTime;
-
-    @ColumnInfo(name="path")
-    private String mPath;
-*/
-
     public DownloadFile(String name, String thumbnailPath , String date, int result){
         this.name = name;
         this.thumbnailPath = thumbnailPath;

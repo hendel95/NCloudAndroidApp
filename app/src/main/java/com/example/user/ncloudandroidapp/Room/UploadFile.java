@@ -27,16 +27,6 @@ public class UploadFile {
     @ColumnInfo(name="result")
     private int mResult;
 
-/*    @ColumnInfo(name="mime_type")
-    private String mMimeType;
-
-    @ColumnInfo(name="date_taken_time")
-    private String mDateTakenTime;
-
-    @ColumnInfo(name="path")
-    private String mPath;
-*/
-
     public UploadFile(String name, String thumbnailPath , String date, int result){
         setMName(name);
         setMThumbnailPath(thumbnailPath);

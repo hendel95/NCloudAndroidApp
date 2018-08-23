@@ -22,20 +22,6 @@
         android:layout_height="match_parent"
         android:layout_alignParentTop="true" />
 
-   <!-- <ProgressBar
-        android:id="@+id/gdrive_progressbar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_centerVertical="true" />-->
-
-    <TextView
-        android:id="@+id/progressbar_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="@android:color/white"
-        android:text="0"
-        android:layout_centerInParent="true"/>
 
     <android.support.constraint.ConstraintLayout
         android:id="@+id/bottom_nav_local"
